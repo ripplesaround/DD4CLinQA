@@ -770,7 +770,7 @@ def main():
     if args.do_train:
         print("/n/n    真的在训练！！！/n/n")
         train_dataset = load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False)
-        print("/n/n    在训练么！！！/n/n")
+        print("/n/n    就是在训练么！！！/n/n")
         global_step, tr_loss = train(args, train_dataset, model, tokenizer)
         logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
 
