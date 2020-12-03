@@ -89,6 +89,20 @@ def Difficulty_Evaluation(args, train_dataset, model, tokenizer):
     :param tokenizer: label
     """
     subset_quantity = args.div_subset
+    n_train = len(train_dataset)
+    split = n_train // subset_quantity
+    indices = list(range(n_train))
+    random.shuffle(indices)
+    train_sampler = []
+    for i in range(subset_quantity-1):
+        train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(indices[i*split:(i+1)*split]))
+    train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(indices[(subset_quantity-1)*split:]))
+
+    # for i in train_sampler:
+    #     print(len(i))
+    #     print("-----")
+    # print(train_sampler[0])
+
 
 
 
@@ -102,6 +116,8 @@ def train(args, train_dataset, model, tokenizer):
     args.train_batch_size = args.per_gpu_train_batch_size * max(1, args.n_gpu)
     train_sampler = RandomSampler(train_dataset) if args.local_rank == -1 else DistributedSampler(train_dataset)
     train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=args.train_batch_size)
+
+    Difficulty_Evaluation(args, train_dataset, model, tokenizer)
 
     if args.max_steps > 0:
         t_total = args.max_steps
@@ -424,7 +440,6 @@ def evaluate(args, model, tokenizer, prefix=""):
 
 
 def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False):
-    print("hello")
     logger.info("开始执行load函数")
     if args.local_rank not in [-1, 0] and not evaluate:
         # Make sure only the first process in distributed training process the dataset, and the others will use the cache
@@ -775,6 +790,7 @@ def main():
     )
 
     train_dataset = load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False)
+    # Difficulty_Evaluation(args, train_dataset, model, tokenizer)
 
     # model = AutoModelForQuestionAnswering.from_pretrained(
     #     args.model_name_or_path,
@@ -782,6 +798,8 @@ def main():
     #     config=config,
     #     cache_dir=args.cache_dir if args.cache_dir else None,
     # )
+
+    Difficulty_Evaluation(args, train_dataset, None, tokenizer)
     #
     # if args.local_rank == 0:
     #     # Make sure only the first process in distributed training will download model & vocab
