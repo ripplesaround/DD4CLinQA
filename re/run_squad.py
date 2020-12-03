@@ -15,6 +15,12 @@
 # limitations under the License.
 """ Finetuning the library models for question-answering on SQuAD (DistilBERT, Bert, XLM, XLNet)."""
 
+"""
+    参考文献：
+    1.Xu, Benfeng & Zhang, Licheng & Mao, Zhendong & Wang, Quan & Xie, Hongtao & Zhang, Yongdong. (2020). Curriculum Learning for Natural Language Understanding. 6095-6104. 10.18653/v1/2020.acl-main.542. 
+    
+"""
+
 
 import argparse
 import glob
@@ -57,6 +63,7 @@ except ImportError:
 
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 MODEL_CONFIG_CLASSES = list(MODEL_FOR_QUESTION_ANSWERING_MAPPING.keys())
 MODEL_TYPES = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
@@ -72,6 +79,19 @@ def set_seed(args):
 
 def to_list(tensor):
     return tensor.detach().cpu().tolist()
+
+def Difficulty_Evaluation(args, train_dataset, model, tokenizer):
+    """
+    用来对数据集进行难度进行划分，将teacher的f1分数用作难度衡量
+    :param args: 划分成 n 个subset
+    :param train_dataset: 全部数据集
+    :param model: 用的模型
+    :param tokenizer: label
+    """
+    subset_quantity = args.div_subset
+
+
+
 
 
 def train(args, train_dataset, model, tokenizer):
@@ -404,6 +424,8 @@ def evaluate(args, model, tokenizer, prefix=""):
 
 
 def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False):
+    print("hello")
+    logger.info("开始执行load函数")
     if args.local_rank not in [-1, 0] and not evaluate:
         # Make sure only the first process in distributed training process the dataset, and the others will use the cache
         torch.distributed.barrier()
@@ -469,6 +491,7 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
         torch.distributed.barrier()
 
     if output_examples:
+        # defualt 为 false
         return dataset, examples, features
     return dataset
 
@@ -497,6 +520,14 @@ def main():
         type=str,
         required=True,
         help="The output directory where the model checkpoints and predictions will be written.",
+    )
+
+    # CL_parameters
+    parser.add_argument(
+        "--div_subset",
+        default=3,
+        type=int,
+        help="划分子集的数量",
     )
 
     # Other parameters
@@ -724,6 +755,8 @@ def main():
     # Set seed
     set_seed(args)
 
+
+
     # Load pretrained model and tokenizer
     if args.local_rank not in [-1, 0]:
         # Make sure only the first process in distributed training will download model & vocab
@@ -740,94 +773,98 @@ def main():
         cache_dir=args.cache_dir if args.cache_dir else None,
         use_fast=False,  # SquadDataset is not compatible with Fast tokenizers which have a smarter overflow handeling
     )
-    model = AutoModelForQuestionAnswering.from_pretrained(
-        args.model_name_or_path,
-        from_tf=bool(".ckpt" in args.model_name_or_path),
-        config=config,
-        cache_dir=args.cache_dir if args.cache_dir else None,
-    )
 
-    if args.local_rank == 0:
-        # Make sure only the first process in distributed training will download model & vocab
-        torch.distributed.barrier()
+    train_dataset = load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False)
 
-    model.to(args.device)
+    # model = AutoModelForQuestionAnswering.from_pretrained(
+    #     args.model_name_or_path,
+    #     from_tf=bool(".ckpt" in args.model_name_or_path),
+    #     config=config,
+    #     cache_dir=args.cache_dir if args.cache_dir else None,
+    # )
+    #
+    # if args.local_rank == 0:
+    #     # Make sure only the first process in distributed training will download model & vocab
+    #     torch.distributed.barrier()
 
-    logger.info("Training/evaluation parameters %s", args)
-
-    # Before we do anything with models, we want to ensure that we get fp16 execution of torch.einsum if args.fp16 is set.
-    # Otherwise it'll default to "promote" mode, and we'll get fp32 operations. Note that running `--fp16_opt_level="O2"` will
-    # remove the need for this code, but it is still valid.
-    if args.fp16:
-        try:
-            import apex
-
-            apex.amp.register_half_function(torch, "einsum")
-        except ImportError:
-            raise ImportError("Please install apex from https://www.github.com/nvidia/apex to use fp16 training.")
-
-    # Training
-    if args.do_train:
-        print("/n/n    真的在训练！！！/n/n")
-        train_dataset = load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False)
-        print("/n/n    就是在训练么！！！/n/n")
-        global_step, tr_loss = train(args, train_dataset, model, tokenizer)
-        logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
-
-    if not args.do_train:
-        print("/n d0_train参数有问题/n/n")
+    # model.to(args.device)
+    #
+    # logger.info("Training/evaluation parameters %s", args)
+    #
+    # # Before we do anything with models, we want to ensure that we get fp16 execution of torch.einsum if args.fp16 is set.
+    # # Otherwise it'll default to "promote" mode, and we'll get fp32 operations. Note that running `--fp16_opt_level="O2"` will
+    # # remove the need for this code, but it is still valid.
+    # if args.fp16:
+    #     try:
+    #         import apex
+    #
+    #         apex.amp.register_half_function(torch, "einsum")
+    #     except ImportError:
+    #         raise ImportError("Please install apex from https://www.github.com/nvidia/apex to use fp16 training.")
+    #
+    # # Training
+    # if args.do_train:
+    #     print("/n/n    真的在训练！！！/n/n")
+    #     train_dataset = load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False)
+    #     print("/n/n    就是在训练么！！！/n/n")
+    #     # global_step, tr_loss = train(args, train_dataset, model, tokenizer)
+    #     logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
+    #
+    # if not args.do_train:
+    #     print("/n d0_train参数有问题/n/n")
 
     # Save the trained model and the tokenizer
-    if args.do_train and (args.local_rank == -1 or torch.distributed.get_rank() == 0):
-        print("/n/n    真的真的在训练！！！/n/n")
-        logger.info("Saving model checkpoint to %s", args.output_dir)
-        # Save a trained model, configuration and tokenizer using `save_pretrained()`.
-        # They can then be reloaded using `from_pretrained()`
-        # Take care of distributed/parallel training
-        model_to_save = model.module if hasattr(model, "module") else model
-        model_to_save.save_pretrained(args.output_dir)
-        tokenizer.save_pretrained(args.output_dir)
-
-        # Good practice: save your training arguments together with the trained model
-        torch.save(args, os.path.join(args.output_dir, "training_args.bin"))
-
-        # Load a trained model and vocabulary that you have fine-tuned
-        model = AutoModelForQuestionAnswering.from_pretrained(args.output_dir)  # , force_download=True)
-
-        # SquadDataset is not compatible with Fast tokenizers which have a smarter overflow handeling
-        # So we use use_fast=False here for now until Fast-tokenizer-compatible-examples are out
-        tokenizer = AutoTokenizer.from_pretrained(args.output_dir, do_lower_case=args.do_lower_case, use_fast=False)
-        model.to(args.device)
-
-    # Evaluation - we can ask to evaluate all the checkpoints (sub-directories) in a directory
+    # if args.do_train and (args.local_rank == -1 or torch.distributed.get_rank() == 0):
+    #     print("/n/n    真的真的在训练！！！/n/n")
+    #     logger.info("Saving model checkpoint to %s", args.output_dir)
+    #     # Save a trained model, configuration and tokenizer using `save_pretrained()`.
+    #     # They can then be reloaded using `from_pretrained()`
+    #     # Take care of distributed/parallel training
+    #     model_to_save = model.module if hasattr(model, "module") else model
+    #     model_to_save.save_pretrained(args.output_dir)
+    #     tokenizer.save_pretrained(args.output_dir)
+    #
+    #     # Good practice: save your training arguments together with the trained model
+    #     torch.save(args, os.path.join(args.output_dir, "training_args.bin"))
+    #
+    #     # Load a trained model and vocabulary that you have fine-tuned
+    #     model = AutoModelForQuestionAnswering.from_pretrained(args.output_dir)  # , force_download=True)
+    #
+    #     # SquadDataset is not compatible with Fast tokenizers which have a smarter overflow handeling
+    #     # So we use use_fast=False here for now until Fast-tokenizer-compatible-examples are out
+    #     tokenizer = AutoTokenizer.from_pretrained(args.output_dir, do_lower_case=args.do_lower_case, use_fast=False)
+    #     model.to(args.device)
+    #
+    # # Evaluation - we can ask to evaluate all the checkpoints (sub-directories) in a directory
     results = {}
-    if args.do_eval and args.local_rank in [-1, 0]:
-        if args.do_train:
-            logger.info("Loading checkpoints saved during training for evaluation")
-            checkpoints = [args.output_dir]
-            if args.eval_all_checkpoints:
-                checkpoints = list(
-                    os.path.dirname(c)
-                    for c in sorted(glob.glob(args.output_dir + "/**/" + WEIGHTS_NAME, recursive=True))
-                )
-
-        else:
-            logger.info("Loading checkpoint %s for evaluation", args.model_name_or_path)
-            checkpoints = [args.model_name_or_path]
-
-        logger.info("Evaluate the following checkpoints: %s", checkpoints)
-
-        for checkpoint in checkpoints:
-            # Reload the model
-            global_step = checkpoint.split("-")[-1] if len(checkpoints) > 1 else ""
-            model = AutoModelForQuestionAnswering.from_pretrained(checkpoint)  # , force_download=True)
-            model.to(args.device)
-
-            # Evaluate
-            result = evaluate(args, model, tokenizer, prefix=global_step)
-
-            result = dict((k + ("_{}".format(global_step) if global_step else ""), v) for k, v in result.items())
-            results.update(result)
+    # results = {}
+    # if args.do_eval and args.local_rank in [-1, 0]:
+    #     if args.do_train:
+    #         logger.info("Loading checkpoints saved during training for evaluation")
+    #         checkpoints = [args.output_dir]
+    #         if args.eval_all_checkpoints:
+    #             checkpoints = list(
+    #                 os.path.dirname(c)
+    #                 for c in sorted(glob.glob(args.output_dir + "/**/" + WEIGHTS_NAME, recursive=True))
+    #             )
+    #
+    #     else:
+    #         logger.info("Loading checkpoint %s for evaluation", args.model_name_or_path)
+    #         checkpoints = [args.model_name_or_path]
+    #
+    #     logger.info("Evaluate the following checkpoints: %s", checkpoints)
+    #
+    #     for checkpoint in checkpoints:
+    #         # Reload the model
+    #         global_step = checkpoint.split("-")[-1] if len(checkpoints) > 1 else ""
+    #         model = AutoModelForQuestionAnswering.from_pretrained(checkpoint)  # , force_download=True)
+    #         model.to(args.device)
+    #
+    #         # Evaluate
+    #         result = evaluate(args, model, tokenizer, prefix=global_step)
+    #
+    #         result = dict((k + ("_{}".format(global_step) if global_step else ""), v) for k, v in result.items())
+    #         results.update(result)
 
     logger.info("Results: {}".format(results))
 

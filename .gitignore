@@ -1,2 +1,4 @@
 /re/bert-base-uncased_300/
 .idea
+/model
+/re/cached_train_model_300
