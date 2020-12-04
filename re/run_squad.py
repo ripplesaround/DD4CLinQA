@@ -88,6 +88,8 @@ def Difficulty_Evaluation(args, train_dataset, model, tokenizer):
     :param model: 用的模型
     :param tokenizer: label
     """
+
+    # 构造meta-dataset
     subset_quantity = args.div_subset
     n_train = len(train_dataset)
     split = n_train // subset_quantity
@@ -98,12 +100,20 @@ def Difficulty_Evaluation(args, train_dataset, model, tokenizer):
         train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(indices[i*split:(i+1)*split]))
     train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(indices[(subset_quantity-1)*split:]))
 
-    # for i in train_sampler:
-    #     print(len(i))
-    #     print("-----")
-    # print(train_sampler[0])
+    meta_datasets = []
+    for i in range(subset_quantity):
+        meta_datasets.append(DataLoader(train_dataset, sampler=train_sampler[0], batch_size=args.train_batch_size))
 
+    # 对每一个teacher进行训练，在原来的meta-dataset上
 
+    for current_teacher in range(subset_quantity):
+        if args.max_steps > 0:
+            t_total = args.max_steps
+            args.num_train_epochs = args.max_steps // (len(meta_datasets[current_teacher]) // args.gradient_accumulation_steps) + 1
+        else:
+            t_total = len(meta_datasets[current_teacher]) // args.gradient_accumulation_steps * args.num_train_epochs
+
+        # todo 分模型进行训练，保存
 
 
 
