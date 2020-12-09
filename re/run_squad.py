@@ -106,16 +106,71 @@ def Difficulty_Evaluation(args, train_dataset, model, tokenizer):
 
     # 对每一个teacher进行训练，在原来的meta-dataset上
 
-    for current_teacher in range(subset_quantity):
+    for current_teacher_id in range(subset_quantity):
         if args.max_steps > 0:
             t_total = args.max_steps
-            args.num_train_epochs = args.max_steps // (len(meta_datasets[current_teacher]) // args.gradient_accumulation_steps) + 1
+            args.num_train_epochs = args.max_steps // (len(meta_datasets[current_teacher_id]) // args.gradient_accumulation_steps) + 1
         else:
-            t_total = len(meta_datasets[current_teacher]) // args.gradient_accumulation_steps * args.num_train_epochs
+            t_total = len(meta_datasets[current_teacher_id]) // args.gradient_accumulation_steps * args.num_train_epochs
 
         # todo 分模型进行训练，保存
 
+        # Prepare optimizer and schedule (linear warmup and decay)
+        no_decay = ["bias", "LayerNorm.weight"]
+        optimizer_grouped_parameters = [
+            {
+                "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)],
+                    "weight_decay": args.weight_decay,
+            },
+            {
+                "params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)],
+                 "weight_decay": 0.0
+            },
+        ]
+        optimizer = AdamW(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
+        scheduler = get_linear_schedule_with_warmup(
+                optimizer, num_warmup_steps=args.warmup_steps, num_training_steps=t_total
+            )
 
+        # Check if saved optimizer or scheduler states exist
+        if os.path.isfile(os.path.join(args.model_name_or_path, "optimizer.pt")) and os.path.isfile(
+                os.path.join(args.model_name_or_path, "scheduler.pt")
+        ):
+        # Load in optimizer and scheduler states
+            optimizer.load_state_dict(torch.load(os.path.join(args.model_name_or_path, "optimizer.pt")))
+            scheduler.load_state_dict(torch.load(os.path.join(args.model_name_or_path, "scheduler.pt")))
+
+        if args.fp16:
+            try:
+                from apex import amp
+            except ImportError:
+                raise ImportError(
+                    "Please install apex from https://www.github.com/nvidia/apex to use fp16 training.")
+                model, optimizer = amp.initialize(model, optimizer, opt_level=args.fp16_opt_level)
+
+        # multi-gpu training (should be after apex fp16 initialization)
+        if args.n_gpu > 1:
+            model = torch.nn.DataParallel(model)
+
+        # Distributed training (should be after apex fp16 initialization)
+        if args.local_rank != -1:
+            model = torch.nn.parallel.DistributedDataParallel(
+                model, device_ids=[args.local_rank], output_device=args.local_rank, find_unused_parameters=True
+            )
+
+        # Train each teacher
+        logger.info("***** Step 1： Running training on teachers " +{current_teacher_id}+ " *****")
+        logger.info("  Num examples = %d", len(train_dataset))
+        logger.info("  Num Epochs = %d", args.num_train_epochs)
+        logger.info("  Instantaneous batch size per GPU = %d", args.per_gpu_train_batch_size)
+        logger.info(
+            "  Total train batch size (w. parallel, distributed & accumulation) = %d",
+            args.train_batch_size
+            * args.gradient_accumulation_steps
+            * (torch.distributed.get_world_size() if args.local_rank != -1 else 1),
+        )
+        logger.info("  Gradient Accumulation steps = %d", args.gradient_accumulation_steps)
+        logger.info("  Total optimization steps = %d", t_total)
 
 
 def train(args, train_dataset, model, tokenizer):
