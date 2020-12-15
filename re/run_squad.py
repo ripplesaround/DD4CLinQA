@@ -106,10 +106,10 @@ def Difficulty_Evaluation(args, train_dataset, model, tokenizer):
     meta_datasets = []
     args.train_batch_size = args.per_gpu_train_batch_size * max(1, args.n_gpu)
     for i in range(subset_quantity):
-        meta_datasets.append(DataLoader(train_dataset, sampler=train_sampler[0], batch_size=args.train_batch_size))
+        meta_datasets.append(DataLoader(train_dataset, sampler=train_sampler[i], batch_size=args.train_batch_size))
 
     # 对每一个teacher进行训练，在原来的meta-dataset上
-
+    saved_teacher_model_dir = []
     for current_teacher_id in range(subset_quantity):
         if args.max_steps > 0:
             t_total = args.max_steps
@@ -308,14 +308,20 @@ def Difficulty_Evaluation(args, train_dataset, model, tokenizer):
         logger.info("S1 teacher(%s) global_step = %s, average loss = %s", current_teacher_id, global_step, tr_loss)
 
         # save teacher model
+        # 保存到每一个单独的文件夹里
         if args.do_train and (args.local_rank == -1 or torch.distributed.get_rank() == 0):
-            logger.info("Saving teacher %s model checkpoint to %s", current_teacher_id, args.output_dir)
+            output_dir_teacher = args.output_dir+"teacher_"+str(current_teacher_id)+"/"
+            logger.info("Saving teacher %s model checkpoint to %s", current_teacher_id, output_dir_teacher)
             # Save a trained model, configuration and tokenizer using `save_pretrained()`.
             # They can then be reloaded using `from_pretrained()`
             # Take care of distributed/parallel training
             model_to_save = model.module if hasattr(model, "module") else model
-            model_to_save.save_pretrained(args.output_dir)
-            tokenizer.save_pretrained(args.output_dir)
+            model_to_save.save_pretrained(output_dir_teacher)
+            tokenizer.save_pretrained(output_dir_teacher)
+            saved_teacher_model_dir.append(output_dir_teacher)
+
+    # todo 难度测评后该如何利用
+    # 先尝试
 
 
 def train(args, train_dataset, model, tokenizer):
@@ -324,16 +330,43 @@ def train(args, train_dataset, model, tokenizer):
         tb_writer = SummaryWriter()
 
     args.train_batch_size = args.per_gpu_train_batch_size * max(1, args.n_gpu)
-    train_sampler = RandomSampler(train_dataset) if args.local_rank == -1 else DistributedSampler(train_dataset)
-    train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=args.train_batch_size)
 
-    Difficulty_Evaluation(args, train_dataset, model, tokenizer)
+
+
+
+
+    train_sampler_total = RandomSampler(train_dataset) if args.local_rank == -1 else DistributedSampler(train_dataset)
+
+    # 难度划分
+    # Difficulty_Evaluation(args,train_dataset, model, tokenizer)
+
+    # 随机划分 sub-set training
+    subset_quantity = args.div_subset
+    n_train = len(train_dataset)
+    split = n_train // subset_quantity
+    indices = list(range(n_train))
+    random.shuffle(indices)
+    train_sampler = []
+    # todo 可以在这里修改每一个轮次的训练集，  1，2，3，total 还是 1，12，123，total
+    # 还可以搞一个1/N的
+    for i in range(subset_quantity - 1):
+        train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(indices[i * split:(i + 1) * split]))
+    train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(indices[(subset_quantity - 1) * split:]))
+
+    curriculum_sets = []
+    args.train_batch_size = args.per_gpu_train_batch_size * max(1, args.n_gpu)
+    for i in range(subset_quantity):
+        curriculum_sets.append(DataLoader(train_dataset, sampler=train_sampler[i], batch_size=args.train_batch_size))
+    total_train_dataloader = DataLoader(train_dataset, sampler=train_sampler_total, batch_size=args.train_batch_size)
+    curriculum_sets.append(total_train_dataloader)
+
+    # CL阶段训练
 
     if args.max_steps > 0:
         t_total = args.max_steps
-        args.num_train_epochs = args.max_steps // (len(train_dataloader) // args.gradient_accumulation_steps) + 1
+        args.num_train_epochs = args.max_steps // (len(curriculum_sets[0]) // args.gradient_accumulation_steps) + 1
     else:
-        t_total = len(train_dataloader) // args.gradient_accumulation_steps * args.num_train_epochs
+        t_total = len(curriculum_sets[0]) // args.gradient_accumulation_steps * args.num_train_epochs
 
     # Prepare optimizer and schedule (linear warmup and decay)
     no_decay = ["bias", "LayerNorm.weight"]
@@ -377,7 +410,7 @@ def train(args, train_dataset, model, tokenizer):
 
     # Train!
     logger.info("***** Running training *****")
-    logger.info("  Num examples = %d", len(train_dataset))
+    logger.info("  Num examples = %d", len(curriculum_sets[0]))
     logger.info("  Num Epochs = %d", args.num_train_epochs)
     logger.info("  Instantaneous batch size per GPU = %d", args.per_gpu_train_batch_size)
     logger.info(
@@ -398,8 +431,8 @@ def train(args, train_dataset, model, tokenizer):
             # set global_step to gobal_step of last saved checkpoint from model path
             checkpoint_suffix = args.model_name_or_path.split("-")[-1].split("/")[0]
             global_step = int(checkpoint_suffix)
-            epochs_trained = global_step // (len(train_dataloader) // args.gradient_accumulation_steps)
-            steps_trained_in_current_epoch = global_step % (len(train_dataloader) // args.gradient_accumulation_steps)
+            epochs_trained = global_step // (len(curriculum_sets[0]) // args.gradient_accumulation_steps)
+            steps_trained_in_current_epoch = global_step % (len(curriculum_sets[0]) // args.gradient_accumulation_steps)
 
             logger.info("  Continuing training from checkpoint, will skip to saved global_step")
             logger.info("  Continuing training from epoch %d", epochs_trained)
@@ -411,13 +444,15 @@ def train(args, train_dataset, model, tokenizer):
     tr_loss, logging_loss = 0.0, 0.0
     model.zero_grad()
     train_iterator = trange(
-        epochs_trained, int(args.num_train_epochs), desc="Epoch", disable=args.local_rank not in [-1, 0]
+        # epochs_trained, int(args.num_train_epochs), desc="Epoch", disable=args.local_rank not in [-1, 0]
+        epochs_trained, int(subset_quantity + 1), desc = "Epoch", disable = args.local_rank not in [-1, 0]
     )
     # Added here for reproductibility
     set_seed(args)
 
+    current_stage = 0
     for _ in train_iterator:
-        epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=args.local_rank not in [-1, 0])
+        epoch_iterator = tqdm(curriculum_sets[current_stage], desc="Iteration", disable=args.local_rank not in [-1, 0])
         for step, batch in enumerate(epoch_iterator):
 
             # Skip past any already trained steps if resuming training
@@ -508,6 +543,8 @@ def train(args, train_dataset, model, tokenizer):
             train_iterator.close()
             break
 
+        current_stage += 1
+
     if args.local_rank in [-1, 0]:
         tb_writer.close()
 
@@ -568,8 +605,8 @@ def evaluate(args, model, tokenizer, prefix=""):
             eval_feature = features[feature_index.item()]
             unique_id = int(eval_feature.unique_id)
 
-            # output = [to_list(output[i]) for output in outputs.to_tuple()]
-            output = [to_list(output[i]) for output in outputs]
+            output = [to_list(output[i]) for output in outputs.to_tuple()]
+            # output = [to_list(output[i]) for output in outputs]
 
             # Some models (XLNet, XLM) use 5 arguments for their predictions, while the other "simpler"
             # models only use two.
@@ -1033,7 +1070,7 @@ def main():
         print("/n/n    真的在训练！！！/n/n")
         train_dataset = load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False)
         print("/n/n    就是在训练么！！！/n/n")
-        Difficulty_Evaluation(args, train_dataset, model, tokenizer)
+        # Difficulty_Evaluation(args, train_dataset, model, tokenizer)
         global_step, tr_loss = train(args, train_dataset, model, tokenizer)
         logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
 
