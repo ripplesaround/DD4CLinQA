@@ -8,7 +8,7 @@ import random
 def print_hi(name):
     # Use a breakpoint in the code line below to debug your script.
 
-    print("len ")
+    print("lensa")
 
 
 # Press the green button in the gutter to run the script.
