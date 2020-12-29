@@ -58,7 +58,7 @@ from transformers.data.processors.squad import SquadResult, SquadV1Processor, Sq
 try:
     from torch.utils.tensorboard import SummaryWriter
 except ImportError:
-    # from tensorboardX import SummaryWriter
+    from tensorboardX import SummaryWriter
     print("error in import")
 
 logger = logging.getLogger(__name__)
