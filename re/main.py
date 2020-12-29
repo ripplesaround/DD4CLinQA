@@ -1,18 +1,37 @@
-# This is a sample Python script.
+import numpy as np
 
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
-import random
+import torch
+import torch.nn as nn
+
+from captum.attr import IntegratedGradients
+
+class ToyModel(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.lin1 = nn.Linear(3, 3)
+        self.relu = nn.ReLU()
+        self.lin2 = nn.Linear(3, 2)
+
+        # initialize weights and biases
+        self.lin1.weight = nn.Parameter(torch.arange(-4.0, 5.0).view(3, 3))
+        self.lin1.bias = nn.Parameter(torch.zeros(1,3))
+        self.lin2.weight = nn.Parameter(torch.arange(-3.0, 3.0).view(2, 3))
+        self.lin2.bias = nn.Parameter(torch.ones(1,2))
+
+    def forward(self, input):
+        return self.lin2(self.relu(self.lin1(input)))
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
+model = ToyModel()
+model.eval()
 
-    print("lensa")
+torch.manual_seed(123)
+np.random.seed(123)
 
+input = torch.rand(2, 3)
+baseline = torch.zeros(2, 3)
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+ig = IntegratedGradients(model)
+attributions, delta = ig.attribute(input, baseline, target=0, return_convergence_delta=True)
+print('IG Attributions:', attributions)
+print('Convergence Delta:', delta)
