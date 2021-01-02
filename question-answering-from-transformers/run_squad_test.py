@@ -23,7 +23,7 @@
 
 from pytorch_pretrained_bert import BertModel, BertTokenizer
 from Interpreter import Interpreter
-
+import json
 import argparse
 import glob
 import logging
@@ -61,7 +61,7 @@ from transformers.data.processors.squad import SquadResult, SquadV1Processor, Sq
 try:
     from torch.utils.tensorboard import SummaryWriter
 except ImportError:
-    # from tensorboardX import SummaryWriter
+    from tensorboardX import SummaryWriter
     print("error in import")
 
 logger = logging.getLogger(__name__)
@@ -348,30 +348,33 @@ def Difficulty_Evaluation(args, train_dataset, model, tokenizer):
     
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    tokenizer = BertTokenizer.from_pretrained("/home/fwx/model_pytorch/bert_base_uncased")
+    # load bert model
+    model = BertModel.from_pretrained("/home/fwx/model_pytorch/bert_base_uncased").to(device)
+    for param in model.parameters():
+        param.requires_grad = False
+    model.eval()
+    # here, we load the regularization we already calculated for simplicity
+    regularization = json.load(open("regular.json", "r"))
+
     for item in meta_datasets[0]:
         print(len(item))
 
+        print(item[0])
 
-        tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
-        words = ["[CLS]"] + tokenizer.tokenize(item) + ["[SEP]"]
-
-        # load bert model
-        model = BertModel.from_pretrained("bert-base-uncased").to(device)
-        for param in model.parameters():
-            param.requires_grad = False
-        model.eval()
-
-        # get the x (here we get x by hacking the code in the bert package)
-        tokenized_ids = tokenizer.convert_tokens_to_ids(words)
-        segment_ids = [0 for _ in range(len(words))]
-        token_tensor = torch.tensor([tokenized_ids], device=device)
-        segment_tensor = torch.tensor([segment_ids], device=device)
-        x = model.embeddings(token_tensor, segment_tensor)[0]
-
+        # words = ["[CLS]"] + tokenizer.tokenize(item) + ["[SEP]"]
+        #
+        # # get the x (here we get x by hacking the code in the bert package)
+        # tokenized_ids = tokenizer.convert_tokens_to_ids(words)
+        # segment_ids = [0 for _ in range(len(words))]
+        # token_tensor = torch.tensor([tokenized_ids], device=device)
+        # segment_tensor = torch.tensor([segment_ids], device=device)
+        # x = model.embeddings(token_tensor, segment_tensor)[0]
+        # notice RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu!
         # here, we load the regularization we already calculated for simplicity
-        regularization = json.load(open("regular.json", "r"))
+        # regularization = json.load(open("regular.json", "r"))
 
-        interpreter = Interpreter(x=x, Phi=Phi, regularization=regularization, words=words).to(device)
+        interpreter = Interpreter(x=item[0], Phi=Phi, regularization=regularization).to(device)
         interpreter.optimize(iteration=5000, lr=0.01, show_progress=True)
 
         print("-------------------------")
@@ -382,7 +385,7 @@ def Difficulty_Evaluation(args, train_dataset, model, tokenizer):
         # 最大差值
         print("diffenerce: ",max(interpreter.get_sigma()) - min(interpreter.get_sigma()))
 
-        interpreter.visualize()
+        interpreter.get_sigma()
 
 
 def train(args, train_dataset, model, tokenizer):

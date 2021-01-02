@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """ Finetuning the library models for question-answering on SQuAD (DistilBERT, Bert, XLM, XLNet)."""
+import time
 
 """
     参考文献：
@@ -27,6 +28,7 @@ import logging
 import os
 import random
 import timeit
+
 
 import numpy as np
 import torch
@@ -54,6 +56,8 @@ from transformers.data.processors.squad import SquadResult, SquadV1Processor, Sq
 
 # from transformers.trainer_utils import is_main_process
 
+# notice gpu编号
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 try:
     from torch.utils.tensorboard import SummaryWriter
@@ -69,11 +73,16 @@ MODEL_TYPES = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
 
 
 def set_seed(args):
-    random.seed(args.seed)
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
+    # random.seed(args.seed)
+    # np.random.seed(args.seed)
+    # torch.manual_seed(args.seed)
+    # if args.n_gpu > 0:
+    #     torch.cuda.manual_seed_all(args.seed)
+    random.seed(time.time())
+    np.random.seed(int(time.time()))
+    torch.manual_seed(int(time.time()))
     if args.n_gpu > 0:
-        torch.cuda.manual_seed_all(args.seed)
+        torch.cuda.manual_seed_all(int(time.time()))
 
 
 def to_list(tensor):
@@ -355,12 +364,18 @@ def train(args, train_dataset, model, tokenizer):
 
 
     curriculum_sets = []
+    total_train_dataloader = DataLoader(train_dataset, sampler=train_sampler_total, batch_size=args.train_batch_size)
+    for i in range(int(args.num_train_epochs)):
+        curriculum_sets.append(total_train_dataloader)
+    # curriculum_sets.append(total_train_dataloader)
+    # curriculum_sets.append(total_train_dataloader)
+
     args.train_batch_size = args.per_gpu_train_batch_size * max(1, args.n_gpu)
     for i in range(subset_quantity):
         curriculum_sets.append(DataLoader(train_dataset, sampler=train_sampler[i], batch_size=args.train_batch_size))
-    total_train_dataloader = DataLoader(train_dataset, sampler=train_sampler_total, batch_size=args.train_batch_size)
-    curriculum_sets.append(total_train_dataloader)
-    curriculum_sets.append(total_train_dataloader)
+    # total_train_dataloader = DataLoader(train_dataset, sampler=train_sampler_total, batch_size=args.train_batch_size)
+    # curriculum_sets.append(total_train_dataloader)
+    # curriculum_sets.append(total_train_dataloader)
 
     # CL阶段训练
 
@@ -447,7 +462,7 @@ def train(args, train_dataset, model, tokenizer):
     model.zero_grad()
     train_iterator = trange(
         # epochs_trained, int(args.num_train_epochs), desc="Epoch", disable=args.local_rank not in [-1, 0]
-        epochs_trained, int(subset_quantity + 2), desc = "Epoch", disable = args.local_rank not in [-1, 0]
+        epochs_trained, int(len(curriculum_sets)), desc = "Epoch", disable = args.local_rank not in [-1, 0]
     )
     # Added here for reproductibility
     set_seed(args)
@@ -1018,6 +1033,7 @@ def main():
     #     transformers.utils.logging.enable_explicit_format()
     # Set seed
     set_seed(args)
+    # set_seed(time.time())
 
     # Load pretrained model and tokenizer
     if args.local_rank not in [-1, 0]:
