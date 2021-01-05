@@ -53,7 +53,7 @@ class Interpreter(nn.Module):
     Where noise ~ N(0, 1), scale is a hyper-parameter that controls the maximum value of sigma^2, and ratio in (0, 1) is the learnable parameter.
 
     """
-    def __init__(self, x, Phi, scale=0.5, rate=0.1, regularization=None, words=None):
+    def __init__(self,batch, x, Phi, scale=0.5, rate=0.1, regularization=None, words=None):
         """ Initialize an interpreter class.
 
         Args:
@@ -74,6 +74,7 @@ class Interpreter(nn.Module):
 
         """
         super(Interpreter, self).__init__()
+        self.batch = batch
         self.s = x.size(0)
         self.d = x.size(1)
         self.ratio = nn.Parameter(torch.randn(self.s, 1), requires_grad=True)
@@ -82,6 +83,8 @@ class Interpreter(nn.Module):
         self.rate = rate
         self.x = x
         self.Phi = Phi
+
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         self.regular = regularization
         if self.regular is not None:
@@ -99,12 +102,29 @@ class Interpreter(nn.Module):
             torch.FloatTensor: a scalar, the target loss.
 
         """
+        # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         ratios = torch.sigmoid(self.ratio)  # S * 1
-        x = self.x + 0.    # S * D
-        x_tilde = x + ratios * torch.randn(self.s, self.d).to(x.device) * self.scale  # S * D
-        s = self.Phi(x)  # D or S * D
-        s_tilde = self.Phi(x_tilde)
+        x = (self.x + 0.).to(self.device)    # S * D
+        # x = (self.x).to(self.device)
+        x_tilde = x + ratios * torch.randn(self.s, self.d).to(x.device) * (self.scale)  # S * D
+        #
+        # print(x.dtype, " dtype")
+        # print(x_tilde.dtype, " tilde_dtype")
+        # print(self.batch[0].dtype,"batch[0] d")
+
+        s = self.Phi(self.batch)  # D or S * D
+        batch_tilde = list(self.batch)
+        batch_tilde[0] = x_tilde.long()
+        for i in range(len(batch_tilde[0])):
+            for j in range(len(batch_tilde[0][i])):
+                if (self.batch[0][i][j] == 0 or self.batch[0][i][j] == 111 or self.batch[0][i][j] == 112):
+                    batch_tilde[0][i][j] = self.batch[0][i][j]
+
+        # print(batch_tilde[0][0])
+        batch_tilde = tuple(t.to(x.device) for t in batch_tilde)
+        s_tilde = self.Phi(batch_tilde)
         loss = (s_tilde - s) ** 2
+
         if self.regular is not None:
             loss = torch.mean(loss / self.regular ** 2)
         else:

@@ -52,6 +52,10 @@ except ImportError:
     from tensorboardX import SummaryWriter
     print("error in import")
 
+
+
+global phi_model
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -141,9 +145,11 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
     return dataset
 
 
-def Difficulty_Evaluation(args, train_dataset,tokenizer, model_org=None):
+def Difficulty_Evaluation(args, train_dataset,tokenizer,examples,features, model_org=None):
     """
     用来对数据集进行难度进行划分，将teacher的f1分数用作难度衡量
+    :param examples:
+    :param features:
     :param args: 划分成 n 个subset
     :param train_dataset: 全部数据集
     :param model_org: 用的模型
@@ -169,35 +175,90 @@ def Difficulty_Evaluation(args, train_dataset,tokenizer, model_org=None):
     for i in range(subset_quantity):
         meta_datasets.append(DataLoader(train_dataset, sampler=train_sampler[i], batch_size=args.train_batch_size))
 
-    def Phi(x):
-        global phi_model
-        x = x.unsqueeze(0)
-        attention_mask = torch.ones(x.shape[:2]).to(x.device)
-        extended_attention_mask = attention_mask.unsqueeze(1).unsqueeze(2)
-        extended_attention_mask = extended_attention_mask.to(dtype=torch.float)
-        extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
-        # extract the 3rd layer
-        model_list = phi_model.encoder.layer[:3]
-        hidden_states = x
-        for layer_module in model_list:
-            hidden_states = layer_module(hidden_states, extended_attention_mask)
-        return hidden_states[0]
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # 没有用到，因为我们不需要可视化
     phi_tokenizer = BertTokenizer.from_pretrained("/home/fwx/model_pytorch/bert_base_uncased")
     # load bert model
-    phi_model = BertModel.from_pretrained("/home/fwx/model_pytorch/bert_base_uncased").to(device)
-    for param in phi_model.parameters():
-        param.requires_grad = False
+    # phi model 定义在phi 外面 防止反复还在
+    # phi_model = BertModel.from_pretrained("/home/fwx/model_pytorch/bert_base_uncased").to(device)
+    # for param in phi_model.parameters():
+    #     param.requires_grad = False
+
+    args.model_type = args.model_type.lower()
+    config = AutoConfig.from_pretrained(
+        args.config_name if args.config_name else args.model_name_or_path,
+        cache_dir=args.cache_dir if args.cache_dir else None,
+    )
+    tokenizer = AutoTokenizer.from_pretrained(
+        args.tokenizer_name if args.tokenizer_name else args.model_name_or_path,
+        do_lower_case=args.do_lower_case,
+        cache_dir=args.cache_dir if args.cache_dir else None,
+        use_fast=False,  # SquadDataset is not compatible with Fast tokenizers which have a smarter overflow handeling
+    )
+
+    phi_model = AutoModelForQuestionAnswering.from_pretrained(
+        args.model_name_or_path,
+        from_tf=bool(".ckpt" in args.model_name_or_path),
+        config=config,
+        cache_dir=args.cache_dir if args.cache_dir else None,
+    )
+
+    phi_model.to(args.device)
+
     phi_model.eval()
     # here, we load the regularization we already calculated for simplicity
     regularization = json.load(open("regular.json", "r"))
 
-    for item in meta_datasets[0]:
-        print(len(item))
+    def Phi(Phi_batch):
+        # 可以直接输入结果
+        phi_model.eval()
+        with torch.no_grad():
+            inputs = {
+                "input_ids": Phi_batch[0],
+                "attention_mask": Phi_batch[1],
+                "token_type_ids": Phi_batch[2],
+            }
 
-        print(item[0])
+            if args.model_type in ["xlm", "roberta", "distilbert", "camembert", "bart", "longformer"]:
+                del inputs["token_type_ids"]
+            feature_indices = Phi_batch[3]
+            outputs = phi_model(**inputs)
+
+        all_start_logits = []
+        all_end_logits = []
+        for i, feature_index in enumerate(feature_indices):
+            # eval_feature = features[feature_index.item()]
+            # unique_id = int(eval_feature.unique_id)
+
+            output = [to_list(output[i]) for output in outputs.to_tuple()]
+
+            start_logits, end_logits = output
+            # result = SquadResult(unique_id, start_logits, end_logits)
+            # print("-" * 50)
+
+            # all_results.append(result)
+            all_start_logits.append(start_logits)
+            all_end_logits.append(end_logits)
+
+        # 模型的输出
+        return torch.Tensor(all_start_logits)  # 48 384
+
+    all_results = []
+    all_start_logits = []
+    all_end_logits = []
+    for batch in tqdm(meta_datasets[0]):
+        # print(len(item)) 8
+        phi_model.eval()
+        # batch = (t.to(args.device) for t in batch)
+        batch = tuple(t.to(args.device) for t in batch)
+        # print(batch[0][0])
+        # all_start_logits_tensor = Phi(batch)    #48 384
+
+        # print(all_start_logits_tensor.shape)
+        # todo 搞清楚向量长度问题
 
         # words = ["[CLS]"] + tokenizer.tokenize(item) + ["[SEP]"]
         #
@@ -211,8 +272,11 @@ def Difficulty_Evaluation(args, train_dataset,tokenizer, model_org=None):
         # here, we load the regularization we already calculated for simplicity
         # regularization = json.load(open("regular.json", "r"))
 
-        interpreter = Interpreter(x=item[0], Phi=Phi, regularization=regularization).to(device)
-        interpreter.optimize(iteration=5000, lr=0.01, show_progress=True)
+
+        # interpreter = Interpreter(batch=batch,x=batch[0], Phi=Phi, regularization=regularization).to(args.device)
+        interpreter = Interpreter(batch=batch, x=batch[0], Phi=Phi, regularization=None).to(args.device)
+        interpreter.optimize(iteration=1000, lr=0.01, show_progress=True)
+
 
         print("-------------------------")
         # 平均值
@@ -223,6 +287,8 @@ def Difficulty_Evaluation(args, train_dataset,tokenizer, model_org=None):
         print("diffenerce: ", max(interpreter.get_sigma()) - min(interpreter.get_sigma()))
 
         interpreter.get_sigma()
+
+    logger.info("难度评估已完成")
 
     # todo 检测效果
     # todo 保存到本地
@@ -503,11 +569,19 @@ def main():
         use_fast=False,  # SquadDataset is not compatible with Fast tokenizers which have a smarter overflow handeling
     )
 
+
     # todo 修改参数格式
     if args.do_train:
-        print("/n/n    真的在训练！！！/n/n")
-        train_dataset = load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False)
-        print("/n/n    就是在训练么！！！/n/n")
-        Difficulty_Evaluation(args, train_dataset, tokenizer)
-        # global_step, tr_loss = train(args, train_dataset, model, tokenizer)
-        # logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
+        # 这个阶段 train
+        dataset, examples, features = load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=True)
+        results = Difficulty_Evaluation(args, dataset, tokenizer,examples,features)
+        print(results)
+
+    else:
+        print("hi")
+        logger.info("here")
+
+    return logger.info("程序运行结束")
+
+if __name__ == "__main__":
+    main()

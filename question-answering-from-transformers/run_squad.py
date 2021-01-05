@@ -57,7 +57,7 @@ from transformers.data.processors.squad import SquadResult, SquadV1Processor, Sq
 # from transformers.trainer_utils import is_main_process
 
 # notice gpu编号
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
 try:
     from torch.utils.tensorboard import SummaryWriter
@@ -358,9 +358,16 @@ def train(args, train_dataset, model, tokenizer):
     train_sampler = []
     # todo 可以在这里修改每一个轮次的训练集，  1，2，3，total 还是 1，12，123，total
     # 还可以搞一个1/N的
+    temp = []
     for i in range(subset_quantity - 1):
-        train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(indices[i * split : i * split + int(1 / 3 * split)]))
-    train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler( indices[(subset_quantity - 1) * split: (subset_quantity - 1) * split + int(1 / 3 * split)] ))
+        temp = []
+        for j in range(i+1):
+            temp += indices[j * split: j * split + int(1 / 3 * split)]
+        train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(temp))
+        # print(temp)
+    # print(len(temp))
+    # print("len over")
+    train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(temp + indices[(subset_quantity - 1) * split: (subset_quantity - 1) * split + int(1 / 3 * split)] ))
 
 
     curriculum_sets = []
@@ -479,6 +486,7 @@ def train(args, train_dataset, model, tokenizer):
 
             model.train()
             batch = tuple(t.to(args.device) for t in batch)
+
 
             inputs = {
                 "input_ids": batch[0],
