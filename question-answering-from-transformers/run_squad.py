@@ -487,6 +487,7 @@ def train(args, train_dataset, model, tokenizer):
             model.train()
             batch = tuple(t.to(args.device) for t in batch)
 
+            print("batch_size",batch[0].shape)
 
             inputs = {
                 "input_ids": batch[0],
@@ -1078,6 +1079,24 @@ def main():
 
     model.to(args.device)
 
+    print(model)
+
+
+    total_grad_out = []
+    total_grad_in = []
+
+    def hook_fn_backward(module, grad_input, grad_output):
+        # print(module)  # 为了区分模块
+        # 为了符合反向传播的顺序，我们先打印 grad_output
+        print('grad_output', grad_output)
+        # 再打印 grad_input
+        print('grad_input', grad_input)
+        # 保存到全局变量
+        total_grad_in.append(grad_input)
+        total_grad_out.append(grad_output)
+
+    model.register_backward_hook(hook_fn_backward)
+
     logger.info("Training/evaluation parameters %s", args)
 
     # Before we do anything with models, we want to ensure that we get fp16 execution of torch.einsum if args.fp16 is set.
@@ -1096,8 +1115,9 @@ def main():
         print("/n/n    真的在训练！！！/n/n")
         train_dataset = load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False)
         print("/n/n    就是在训练么！！！/n/n")
-        # Difficulty_Evaluation(args, train_dataset, model, tokenizer)
         global_step, tr_loss = train(args, train_dataset, model, tokenizer)
+        print("len(total_grad_in)",len(total_grad_in))
+
         logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
 
     if not args.do_train:
