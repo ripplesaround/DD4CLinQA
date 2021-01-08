@@ -271,23 +271,16 @@ def Difficulty_Evaluation(args, train_dataset):
     subset = []
     for i in range(subset_quantity):
         subset.append([])
-    for i,batch in tqdm(enumerate(total_train_dataloader)):
+    for i,batch in enumerate(total_train_dataloader):
         if difficult_result[i] == difficult_result_max:
             subset[-1].append(batch)
             continue
-        level = int(gap/(difficult_result[i] - difficult_result_min))
-        print(level)
+        level = int(subset_quantity * (difficult_result[i] - difficult_result_min) / gap)
         subset[level].append(batch)
-
-    for i in range(len(subset)):
-        print(i,"th ",len(subset[i]))
-
 
     logger.info("难度评估已完成")
 
     return subset
-    # todo 检测效果
-    # todo 保存到本地
 
 def main():
     parser = argparse.ArgumentParser()

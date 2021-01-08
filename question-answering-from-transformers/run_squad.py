@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """ Finetuning the library models for question-answering on SQuAD (DistilBERT, Bert, XLM, XLNet)."""
-import time
 
 """
     参考文献：
@@ -22,14 +21,15 @@ import time
 
 """
 
+from Difficulty_Evaluation import Difficulty_Evaluation
+
+import time
 import argparse
 import glob
 import logging
 import os
 import random
 import timeit
-
-
 
 import numpy as np
 import torch
@@ -59,8 +59,6 @@ from transformers.data.processors.squad import SquadResult, SquadV1Processor, Sq
 
 # from transformers.trainer_utils import is_main_process
 
-# notice gpu编号
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
 try:
     from torch.utils.tensorboard import SummaryWriter
@@ -102,8 +100,7 @@ def train(args, train_dataset, model, tokenizer):
 
     train_sampler_total = RandomSampler(train_dataset) if args.local_rank == -1 else DistributedSampler(train_dataset)
 
-    # 难度划分
-    # Difficulty_Evaluation(args,train_dataset, model, tokenizer)
+
 
     # 随机划分 sub-set training
     subset_quantity = args.div_subset
@@ -131,9 +128,12 @@ def train(args, train_dataset, model, tokenizer):
     # curriculum_sets.append(total_train_dataloader)
 
     # 再添加课程任务
-    args.train_batch_size = args.per_gpu_train_batch_size * max(1, args.n_gpu)
-    for i in range(subset_quantity):
-        curriculum_sets.append(DataLoader(train_dataset, sampler=train_sampler[i], batch_size=args.train_batch_size))
+    # 难度划分
+    curriculum_sets_temp = Difficulty_Evaluation(args, train_dataset)
+    curriculum_sets += curriculum_sets_temp
+    # args.train_batch_size = args.per_gpu_train_batch_size * max(1, args.n_gpu)
+    # for i in range(subset_quantity):
+    #     curriculum_sets.append(DataLoader(train_dataset, sampler=train_sampler[i], batch_size=args.train_batch_size))
     # total_train_dataloader = DataLoader(train_dataset, sampler=train_sampler_total, batch_size=args.train_batch_size)
     # curriculum_sets.append(total_train_dataloader)
     # curriculum_sets.append(total_train_dataloader)
@@ -766,7 +766,7 @@ def main():
 
     # Setup CUDA, GPU & distributed training
     if args.local_rank == -1 or args.no_cuda:
-        device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
+        device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu" , 2)
         args.n_gpu = 0 if args.no_cuda else torch.cuda.device_count()
     else:  # Initializes the distributed backend which will take care of sychronizing nodes/GPUs
         torch.cuda.set_device(args.local_rank)
