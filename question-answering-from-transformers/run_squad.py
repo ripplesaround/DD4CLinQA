@@ -97,39 +97,48 @@ def train(args, train_dataset, model, tokenizer):
 
     args.train_batch_size = args.per_gpu_train_batch_size * max(1, args.n_gpu)
 
-
     train_sampler_total = RandomSampler(train_dataset) if args.local_rank == -1 else DistributedSampler(train_dataset)
-
-
-
-    # 随机划分 sub-set training
     subset_quantity = args.div_subset
-    n_train = len(train_dataset)
-    split = n_train // subset_quantity
-    indices = list(range(n_train))
-    random.shuffle(indices)
-    train_sampler = []
-    # todo 可以在这里修改每一个轮次的训练集，  1，2，3，total 还是 1，12，123，total
-    # 还可以搞一个1/N的
-    temp = []
-    for i in range(subset_quantity - 1):
-        temp = []
-        for j in range(i+1):
-            temp += indices[j * split: j * split + int(1 / 3 * split)]
-        train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(temp))
-    train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(temp + indices[(subset_quantity - 1) * split: (subset_quantity - 1) * split + int(1 / 3 * split)] ))
+
+    # notice 难度划分
+    curriculum_sets_temp = []
+    curriculum_sets_temp_id = Difficulty_Evaluation(args, train_dataset)
+    for i,subset_id in enumerate(curriculum_sets_temp_id):
+        random.shuffle(subset_id)
+        # 如果subset_id过于小，就不采样了
+        if len(subset_id) > (len(train_dataset)/(subset_quantity*subset_quantity)):
+            train_sampler = torch.utils.data.sampler.SubsetRandomSampler(
+                subset_id[0 : int((len(subset_id)/subset_quantity))]
+            )
+        else:
+            train_sampler = torch.utils.data.sampler.SubsetRandomSampler(subset_id)
+        curriculum_sets_temp.append(
+            DataLoader(train_dataset, sampler=train_sampler, batch_size=args.train_batch_size)
+        )
+    # # notice 随机划分 sub-set training
+    # n_train = len(train_dataset)
+    # split = n_train // subset_quantity
+    # indices = list(range(n_train))
+    # random.shuffle(indices)
+    # train_sampler = []
+    # # notice 可以在这里修改每一个轮次的训练集，  1，2，3，total 还是 1，12，123，total
+    # # 还可以搞一个1/N的
+    # temp = []
+    # for i in range(subset_quantity - 1):
+    #     temp = []
+    #     for j in range(i+1):
+    #         temp += indices[j * split: j * split + int(1 / 3 * split)]
+    #     train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(temp))
+    # train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(temp + indices[(subset_quantity - 1) * split: (subset_quantity - 1) * split + int(1 / 3 * split)] ))
 
     # 先添加全部任务
+
     curriculum_sets = []
     total_train_dataloader = DataLoader(train_dataset, sampler=train_sampler_total, batch_size=args.train_batch_size)
     for i in range(int(args.num_train_epochs)):
         curriculum_sets.append(total_train_dataloader)
-    # curriculum_sets.append(total_train_dataloader)
-    # curriculum_sets.append(total_train_dataloader)
 
     # 再添加课程任务
-    # 难度划分
-    curriculum_sets_temp = Difficulty_Evaluation(args, train_dataset)
     curriculum_sets += curriculum_sets_temp
     # args.train_batch_size = args.per_gpu_train_batch_size * max(1, args.n_gpu)
     # for i in range(subset_quantity):

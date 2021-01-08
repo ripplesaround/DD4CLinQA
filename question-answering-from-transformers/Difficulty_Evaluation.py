@@ -268,19 +268,20 @@ def Difficulty_Evaluation(args, train_dataset):
     difficult_result_min = min(difficult_result)
     gap = difficult_result_max - difficult_result_min
 
-    subset = []
+    subset_id = []
     for i in range(subset_quantity):
-        subset.append([])
+        subset_id.append([])
     for i,batch in enumerate(total_train_dataloader):
         if difficult_result[i] == difficult_result_max:
-            subset[-1].append(batch)
+            subset_id[-1].append(i)
             continue
         level = int(subset_quantity * (difficult_result[i] - difficult_result_min) / gap)
-        subset[level].append(batch)
+        # subset_id[level].append(batch)
+        subset_id[level].append(i)
 
     logger.info("难度评估已完成")
 
-    return subset
+    return subset_id
 
 def main():
     parser = argparse.ArgumentParser()
