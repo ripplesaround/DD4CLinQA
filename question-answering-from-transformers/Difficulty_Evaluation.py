@@ -18,12 +18,16 @@ import logging
 import os
 import random
 import timeit
+import matplotlib.pyplot as plt
 
 import numpy as np
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm, trange
+import torchvision.transforms as transforms
 
 import transformers
 from transformers import (
@@ -144,16 +148,40 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
         return dataset, examples, features
     return dataset
 
+def linear_normalization(x):
+    temp_min = torch.min(x)
+    temp_max = torch.max(x)
+    x = (x-temp_min)/(temp_max-temp_min)
+    return x
 
-def Difficulty_Evaluation(args, train_dataset,tokenizer,examples,features, model_org=None):
+def cal_diff(x, y, norm="org", criterion =nn.KLDivLoss() ):
+    if norm == "softmax":
+        x = F.softmax(x)
+        y = F.softmax(y)
+    elif norm == "log_softmax":
+        x = F.log_softmax(x)
+        y = F.log_softmax(y)
+    elif norm == "line":
+        logger.info("使用线性归一化")
+        x = linear_normalization(x)
+        y = linear_normalization(y)
+    elif norm == "Gaussian":
+        # 实现高斯分布
+        # transform_BZ = transforms.Normalize(
+        #     mean=[0.5, 0.5, 0.5],  # 取决于数据集
+        #     std=[0.5, 0.5, 0.5]
+        # )
+        logger.info("使用高斯分布归一化")
+
+    KLloss = criterion(x, y)
+    print("klloss ", KLloss)
+    return KLloss.item()
+
+def Difficulty_Evaluation(args, train_dataset):
     """
     用来对数据集进行难度进行划分，将teacher的f1分数用作难度衡量
-    :param examples:
-    :param features:
     :param args: 划分成 n 个subset
     :param train_dataset: 全部数据集
-    :param model_org: 用的模型
-    :param tokenizer: label
     """
 
     if args.local_rank in [-1, 0]:
@@ -177,20 +205,15 @@ def Difficulty_Evaluation(args, train_dataset,tokenizer,examples,features, model
 
 
 
-
-    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    # 没有用到，因为我们不需要可视化
-    phi_tokenizer = BertTokenizer.from_pretrained("/home/fwx/model_pytorch/bert_base_uncased")
-    # load bert model
-    # phi model 定义在phi 外面 防止反复还在
-    # phi_model = BertModel.from_pretrained("/home/fwx/model_pytorch/bert_base_uncased").to(device)
-    # for param in phi_model.parameters():
-    #     param.requires_grad = False
+    train_sampler_total = RandomSampler(train_dataset) if args.local_rank == -1 else DistributedSampler(train_dataset)
+    total_train_dataloader = DataLoader(train_dataset, sampler=train_sampler_total, batch_size=args.train_batch_size)
 
     args.model_type = args.model_type.lower()
     config = AutoConfig.from_pretrained(
         args.config_name if args.config_name else args.model_name_or_path,
         cache_dir=args.cache_dir if args.cache_dir else None,
+        # 输出中间状态
+        output_hidden_states=True,
     )
     tokenizer = AutoTokenizer.from_pretrained(
         args.tokenizer_name if args.tokenizer_name else args.model_name_or_path,
@@ -204,13 +227,12 @@ def Difficulty_Evaluation(args, train_dataset,tokenizer,examples,features, model
         from_tf=bool(".ckpt" in args.model_name_or_path),
         config=config,
         cache_dir=args.cache_dir if args.cache_dir else None,
+        # output_hidden_states = True,
     )
 
     phi_model.to(args.device)
 
     phi_model.eval()
-    # here, we load the regularization we already calculated for simplicity
-    regularization = json.load(open("regular.json", "r"))
 
     def Phi(Phi_batch):
         # 可以直接输入结果
@@ -221,75 +243,49 @@ def Difficulty_Evaluation(args, train_dataset,tokenizer,examples,features, model
                 "attention_mask": Phi_batch[1],
                 "token_type_ids": Phi_batch[2],
             }
-
             if args.model_type in ["xlm", "roberta", "distilbert", "camembert", "bart", "longformer"]:
                 del inputs["token_type_ids"]
-            feature_indices = Phi_batch[3]
             outputs = phi_model(**inputs)
+            # print(type(outputs))
+            # 只看压缩情况
+            # print(len(outputs.hidden_states))   #13
+            # print(outputs.hidden_states[0].shape)  # 48 384 768 #embedding
+            # print(outputs.hidden_states[-1].shape) # 48 384 768
 
-        all_start_logits = []
-        all_end_logits = []
-        for i, feature_index in enumerate(feature_indices):
-            # eval_feature = features[feature_index.item()]
-            # unique_id = int(eval_feature.unique_id)
+        return outputs.hidden_states[0].to(args.device), outputs.hidden_states[-1].to(args.device) # 48 384
 
-            output = [to_list(output[i]) for output in outputs.to_tuple()]
-
-            start_logits, end_logits = output
-            # result = SquadResult(unique_id, start_logits, end_logits)
-            # print("-" * 50)
-
-            # all_results.append(result)
-            all_start_logits.append(start_logits)
-            all_end_logits.append(end_logits)
-
-        # 模型的输出
-        return torch.Tensor(all_start_logits)  # 48 384
-
-    all_results = []
-    all_start_logits = []
-    all_end_logits = []
-    for batch in tqdm(meta_datasets[0]):
-        # print(len(item)) 8
+    difficult_result=[]
+    for batch in tqdm(total_train_dataloader):
         phi_model.eval()
-        # batch = (t.to(args.device) for t in batch)
         batch = tuple(t.to(args.device) for t in batch)
-        # print(batch[0][0])
-        # all_start_logits_tensor = Phi(batch)    #48 384
+        embedding, output = Phi(batch)
+        difficult_result.append( cal_diff(embedding,output) )
 
-        # print(all_start_logits_tensor.shape)
-        # todo 搞清楚向量长度问题
+    difficult_result = np.array(difficult_result)
 
-        # words = ["[CLS]"] + tokenizer.tokenize(item) + ["[SEP]"]
-        #
-        # # get the x (here we get x by hacking the code in the bert package)
-        # tokenized_ids = tokenizer.convert_tokens_to_ids(words)
-        # segment_ids = [0 for _ in range(len(words))]
-        # token_tensor = torch.tensor([tokenized_ids], device=device)
-        # segment_tensor = torch.tensor([segment_ids], device=device)
-        # x = model.embeddings(token_tensor, segment_tensor)[0]
-        # notice RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu!
-        # here, we load the regularization we already calculated for simplicity
-        # regularization = json.load(open("regular.json", "r"))
+    print("kl", len(difficult_result))
+    difficult_result_max = max(difficult_result)
+    difficult_result_min = min(difficult_result)
+    gap = difficult_result_max - difficult_result_min
 
+    subset = []
+    for i in range(subset_quantity):
+        subset.append([])
+    for i,batch in tqdm(enumerate(total_train_dataloader)):
+        if difficult_result[i] == difficult_result_max:
+            subset[-1].append(batch)
+            continue
+        level = int(gap/(difficult_result[i] - difficult_result_min))
+        print(level)
+        subset[level].append(batch)
 
-        # interpreter = Interpreter(batch=batch,x=batch[0], Phi=Phi, regularization=regularization).to(args.device)
-        interpreter = Interpreter(batch=batch, x=batch[0], Phi=Phi, regularization=None).to(args.device)
-        interpreter.optimize(iteration=1000, lr=0.01, show_progress=True)
+    for i in range(len(subset)):
+        print(i,"th ",len(subset[i]))
 
-
-        print("-------------------------")
-        # 平均值
-        print("mean: ", sum(interpreter.get_sigma()) / len(interpreter.get_sigma()))
-        # 最小值
-        print("min: ", min(interpreter.get_sigma()))
-        # 最大差值
-        print("diffenerce: ", max(interpreter.get_sigma()) - min(interpreter.get_sigma()))
-
-        interpreter.get_sigma()
 
     logger.info("难度评估已完成")
 
+    return subset
     # todo 检测效果
     # todo 保存到本地
 
@@ -522,7 +518,7 @@ def main():
 
     # Setup CUDA, GPU & distributed training
     if args.local_rank == -1 or args.no_cuda:
-        device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
+        device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu",2)
         args.n_gpu = 0 if args.no_cuda else torch.cuda.device_count()
     else:  # Initializes the distributed backend which will take care of sychronizing nodes/GPUs
         torch.cuda.set_device(args.local_rank)
@@ -574,8 +570,8 @@ def main():
     if args.do_train:
         # 这个阶段 train
         dataset, examples, features = load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=True)
-        results = Difficulty_Evaluation(args, dataset, tokenizer,examples,features)
-        print(results)
+        Difficulty_Evaluation(args, dataset)
+        # print(results)
 
     else:
         print("hi")
