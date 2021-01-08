@@ -76,6 +76,26 @@ def set_seed(args):
 def to_list(tensor):
     return tensor.detach().cpu().tolist()
 
+def Difficulty_Evaluation_Randomly(args, train_dataset):
+    subset_quantity = args.div_subset
+    n_train = len(train_dataset)
+    split = n_train // subset_quantity
+    indices = list(range(n_train))
+    random.shuffle(indices)
+    train_sampler = []
+    # notice 可以在这里修改每一个轮次的训练集，  1，2，3，total 还是 1，12，123，total
+    # 还可以搞一个1/N的
+    temp = []
+    for i in range(subset_quantity - 1):
+        temp = []
+        for j in range(i+1):
+            temp += indices[j * split: j * split + int(1 / 3 * split)]
+        train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(temp))
+    train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(
+        temp + indices[(subset_quantity - 1) * split: (subset_quantity - 1) * split + int(1 / 3 * split)] )
+    )
+    return train_sampler
+
 
 def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False):
     logger.info("开始执行load函数")
@@ -174,7 +194,7 @@ def cal_diff(x, y, norm="org", criterion =nn.KLDivLoss() ):
         logger.info("使用高斯分布归一化")
 
     KLloss = criterion(x, y)
-    print("klloss ", KLloss)
+    # print("klloss ", KLoss)
     return KLloss.item()
 
 def Difficulty_Evaluation(args, train_dataset):
@@ -187,44 +207,27 @@ def Difficulty_Evaluation(args, train_dataset):
     if args.local_rank in [-1, 0]:
         tb_writer = SummaryWriter()
 
-    # 构造meta-dataset
-    subset_quantity = args.div_subset
-    n_train = len(train_dataset)
-    split = n_train // subset_quantity
-    indices = list(range(n_train))
-    random.shuffle(indices)
-    train_sampler = []
-    for i in range(subset_quantity - 1):
-        train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(indices[i * split:(i + 1) * split]))
-    train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(indices[(subset_quantity - 1) * split:]))
-
-    meta_datasets = []
-    args.train_batch_size = args.per_gpu_train_batch_size * max(1, args.n_gpu)
-    for i in range(subset_quantity):
-        meta_datasets.append(DataLoader(train_dataset, sampler=train_sampler[i], batch_size=args.train_batch_size))
-
-
-
     train_sampler_total = RandomSampler(train_dataset) if args.local_rank == -1 else DistributedSampler(train_dataset)
     total_train_dataloader = DataLoader(train_dataset, sampler=train_sampler_total, batch_size=args.train_batch_size)
+    subset_quantity = args.div_subset
 
     args.model_type = args.model_type.lower()
     config = AutoConfig.from_pretrained(
-        args.config_name if args.config_name else args.model_name_or_path,
+        args.config_name if args.config_name else args.diff_model_name_or_path,
         cache_dir=args.cache_dir if args.cache_dir else None,
         # 输出中间状态
         output_hidden_states=True,
     )
     tokenizer = AutoTokenizer.from_pretrained(
-        args.tokenizer_name if args.tokenizer_name else args.model_name_or_path,
+        args.tokenizer_name if args.tokenizer_name else args.diff_model_name_or_path,
         do_lower_case=args.do_lower_case,
         cache_dir=args.cache_dir if args.cache_dir else None,
         use_fast=False,  # SquadDataset is not compatible with Fast tokenizers which have a smarter overflow handeling
     )
 
     phi_model = AutoModelForQuestionAnswering.from_pretrained(
-        args.model_name_or_path,
-        from_tf=bool(".ckpt" in args.model_name_or_path),
+        args.diff_model_name_or_path,
+        from_tf=bool(".ckpt" in args.diff_model_name_or_path),
         config=config,
         cache_dir=args.cache_dir if args.cache_dir else None,
         # output_hidden_states = True,
@@ -263,7 +266,6 @@ def Difficulty_Evaluation(args, train_dataset):
 
     difficult_result = np.array(difficult_result)
 
-    print("kl", len(difficult_result))
     difficult_result_max = max(difficult_result)
     difficult_result_min = min(difficult_result)
     gap = difficult_result_max - difficult_result_min

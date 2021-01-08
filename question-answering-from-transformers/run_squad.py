@@ -21,7 +21,7 @@
 
 """
 
-from Difficulty_Evaluation import Difficulty_Evaluation
+from Difficulty_Evaluation import Difficulty_Evaluation, Difficulty_Evaluation_Randomly
 
 import time
 import argparse
@@ -74,6 +74,7 @@ MODEL_TYPES = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
 
 
 def set_seed(args):
+    # 不固定随机种子，采用多样性
     # random.seed(args.seed)
     # np.random.seed(args.seed)
     # torch.manual_seed(args.seed)
@@ -96,7 +97,6 @@ def train(args, train_dataset, model, tokenizer):
         tb_writer = SummaryWriter()
 
     args.train_batch_size = args.per_gpu_train_batch_size * max(1, args.n_gpu)
-
     train_sampler_total = RandomSampler(train_dataset) if args.local_rank == -1 else DistributedSampler(train_dataset)
     subset_quantity = args.div_subset
 
@@ -115,24 +115,12 @@ def train(args, train_dataset, model, tokenizer):
         curriculum_sets_temp.append(
             DataLoader(train_dataset, sampler=train_sampler, batch_size=args.train_batch_size)
         )
-    # # notice 随机划分 sub-set training
-    # n_train = len(train_dataset)
-    # split = n_train // subset_quantity
-    # indices = list(range(n_train))
-    # random.shuffle(indices)
-    # train_sampler = []
-    # # notice 可以在这里修改每一个轮次的训练集，  1，2，3，total 还是 1，12，123，total
-    # # 还可以搞一个1/N的
-    # temp = []
-    # for i in range(subset_quantity - 1):
-    #     temp = []
-    #     for j in range(i+1):
-    #         temp += indices[j * split: j * split + int(1 / 3 * split)]
-    #     train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(temp))
-    # train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(temp + indices[(subset_quantity - 1) * split: (subset_quantity - 1) * split + int(1 / 3 * split)] ))
+
+    # 随机划分
+    # for temp in Difficulty_Evaluation_Randomly(args,train_dataset):
+    #     curriculum_sets_temp.append(DataLoader(train_dataset, sampler=temp, batch_size=args.train_batch_size))
 
     # 先添加全部任务
-
     curriculum_sets = []
     total_train_dataloader = DataLoader(train_dataset, sampler=train_sampler_total, batch_size=args.train_batch_size)
     for i in range(int(args.num_train_epochs)):
@@ -581,6 +569,21 @@ def main():
         help="划分子集的数量",
     )
 
+    parser.add_argument(
+        "--cuda_num",
+        default=3,
+        type=int,
+        help="cuda用哪个",
+    )
+
+    parser.add_argument(
+        "--diff_model_name_or_path",
+        default=None,
+        type=str,
+        required=True,
+        help="用于难度衡量的模型，最好是经过训练的",
+    )
+
     # Other parameters
     parser.add_argument(
         "--data_dir",
@@ -775,7 +778,8 @@ def main():
 
     # Setup CUDA, GPU & distributed training
     if args.local_rank == -1 or args.no_cuda:
-        device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu" , 2)
+        # notice GPU 编号
+        device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu" , args.cuda_num)
         args.n_gpu = 0 if args.no_cuda else torch.cuda.device_count()
     else:  # Initializes the distributed backend which will take care of sychronizing nodes/GPUs
         torch.cuda.set_device(args.local_rank)
