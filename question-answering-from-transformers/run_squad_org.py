@@ -20,6 +20,9 @@ import argparse
 import glob
 import logging
 import os
+# notice gpu编号
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+
 import random
 import timeit
 
@@ -60,8 +63,7 @@ logger = logging.getLogger(__name__)
 MODEL_CONFIG_CLASSES = list(MODEL_FOR_QUESTION_ANSWERING_MAPPING.keys())
 MODEL_TYPES = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
 
-# notice gpu编号
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+
 
 def set_seed(args):
     random.seed(args.seed)
@@ -694,6 +696,7 @@ def main():
 
     # Setup CUDA, GPU & distributed training
     if args.local_rank == -1 or args.no_cuda:
+        # notice cuda
         device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
         args.n_gpu = 0 if args.no_cuda else torch.cuda.device_count()
     else:  # Initializes the distributed backend which will take care of sychronizing nodes/GPUs

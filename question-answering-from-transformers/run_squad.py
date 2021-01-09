@@ -21,13 +21,15 @@
 
 """
 
-from Difficulty_Evaluation import Difficulty_Evaluation, Difficulty_Evaluation_Randomly
-
+import os
+# notice 制定GPU
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 import time
 import argparse
 import glob
 import logging
-import os
+
+
 import random
 import timeit
 
@@ -38,6 +40,9 @@ from torch.utils.data.distributed import DistributedSampler
 import torch.nn as nn
 import torch.nn.functional as F
 from tqdm import tqdm, trange
+
+
+# from Difficulty_Evaluation import Difficulty_Evaluation, Difficulty_Evaluation_Randomly
 
 import transformers
 from transformers import (
@@ -72,6 +77,7 @@ logger.setLevel(logging.INFO)
 MODEL_CONFIG_CLASSES = list(MODEL_FOR_QUESTION_ANSWERING_MAPPING.keys())
 MODEL_TYPES = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
 
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
 def set_seed(args):
     # 不固定随机种子，采用多样性
@@ -83,15 +89,164 @@ def set_seed(args):
     random.seed(time.time())
     np.random.seed(int(time.time()))
     torch.manual_seed(int(time.time()))
-    if args.n_gpu > 0:
-        torch.cuda.manual_seed_all(int(time.time()))
 
 
 def to_list(tensor):
     return tensor.detach().cpu().tolist()
 
+def Difficulty_Evaluation_Randomly(args, train_dataset):
+    logger.info("随机划分")
+    subset_quantity = args.div_subset
+    n_train = len(train_dataset)
+    split = n_train // subset_quantity
+    indices = list(range(n_train))
+    random.shuffle(indices)
+    train_sampler = []
+    # notice 可以在这里修改每一个轮次的训练集，  1，2，3，total 还是 1，12，123，total
+    # 还可以搞一个1/N的
+    temp = []
+    for i in range(subset_quantity - 1):
+        temp = []
+        for j in range(i+1):
+            temp += indices[j * split: j * split + int(1 / 3 * split)]
+        train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(temp))
+    train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(
+        temp + indices[(subset_quantity - 1) * split: (subset_quantity - 1) * split + int(1 / 3 * split)] )
+    )
+    result = []
+    for i in range(subset_quantity):
+        result.append(DataLoader(train_dataset, sampler=train_sampler[i], batch_size=args.train_batch_size))
+    return result
 
-def train(args, train_dataset, model, tokenizer):
+def cal_diff(x, y, norm="org", criterion =nn.KLDivLoss() ):
+    if norm == "softmax":
+        x = F.softmax(x)
+        y = F.softmax(y)
+    elif norm == "log_softmax":
+        x = F.log_softmax(x)
+        y = F.log_softmax(y)
+    elif norm == "line":
+        logger.info("使用线性归一化")
+        x = linear_normalization(x)
+        y = linear_normalization(y)
+    elif norm == "Gaussian":
+        # 实现高斯分布
+        # transform_BZ = transforms.Normalize(
+        #     mean=[0.5, 0.5, 0.5],  # 取决于数据集
+        #     std=[0.5, 0.5, 0.5]
+        # )
+        logger.info("使用高斯分布归一化")
+
+    KLloss = criterion(x, y)
+    # print("klloss ", KLoss)
+    return KLloss.item()
+
+def linear_normalization(x):
+    temp_min = torch.min(x)
+    temp_max = torch.max(x)
+    x = (x-temp_min)/(temp_max-temp_min)
+    return x
+
+def Difficulty_Evaluation(args, train_dataset):
+    """
+    用来对数据集进行难度进行划分，将teacher的f1分数用作难度衡量
+    :param args: 划分成 n 个subset
+    :param train_dataset: 全部数据集
+    """
+    logger.info("开始DE难度评估")
+    if args.local_rank in [-1, 0]:
+            tb_writer = SummaryWriter()
+
+    train_sampler_total = RandomSampler(train_dataset) if args.local_rank == -1 else DistributedSampler(
+            train_dataset)
+    total_train_dataloader = DataLoader(train_dataset, sampler=train_sampler_total,
+                                            batch_size=args.train_batch_size)
+    subset_quantity = args.div_subset
+
+    args.model_type = args.model_type.lower()
+    config = AutoConfig.from_pretrained(
+        args.config_name if args.config_name else args.diff_model_name_or_path,
+        cache_dir=args.cache_dir if args.cache_dir else None,
+        # 输出中间状态
+        output_hidden_states=True,
+    )
+    tokenizer = AutoTokenizer.from_pretrained(
+        args.tokenizer_name if args.tokenizer_name else args.diff_model_name_or_path,
+        do_lower_case=args.do_lower_case,
+        cache_dir=args.cache_dir if args.cache_dir else None,
+        use_fast=False,
+        # SquadDataset is not compatible with Fast tokenizers which have a smarter overflow handeling
+    )
+
+    phi_model = AutoModelForQuestionAnswering.from_pretrained(
+        args.diff_model_name_or_path,
+        from_tf=bool(".ckpt" in args.diff_model_name_or_path),
+        config=config,
+        cache_dir=args.cache_dir if args.cache_dir else None,
+        # output_hidden_states = True,
+    )
+
+    phi_model.to(args.device)
+    phi_model.eval()
+
+    def Phi(Phi_batch):
+        # 可以直接输入结果
+        phi_model.eval()
+        with torch.no_grad():
+            inputs = {
+                "input_ids": Phi_batch[0],
+                "attention_mask": Phi_batch[1],
+                "token_type_ids": Phi_batch[2],
+            }
+            if args.model_type in ["xlm", "roberta", "distilbert", "camembert", "bart", "longformer"]:
+                del inputs["token_type_ids"]
+            outputs = phi_model(**inputs)
+            # print(type(outputs))
+            # 只看压缩情况
+            # print(len(outputs.hidden_states))   #13
+            # print(outputs.hidden_states[0].shape)  # 48 384 768 #embedding
+            # print(outputs.hidden_states[-1].shape) # 48 384 768
+
+        return outputs.hidden_states[0].to(args.device), outputs.hidden_states[-1].to(args.device)  # 48 384
+
+    difficult_result = []
+    for batch in tqdm(total_train_dataloader):
+        phi_model.eval()
+        batch = tuple(t.to(args.device) for t in batch)
+        embedding, output = Phi(batch)
+        difficult_result.append(cal_diff(embedding, output))
+
+    difficult_result = np.array(difficult_result)
+
+    difficult_result_max = max(difficult_result)
+    difficult_result_min = min(difficult_result)
+    gap = difficult_result_max - difficult_result_min
+
+    # subset_id = []
+    # for i in range(subset_quantity):
+    #     subset_id.append([])
+    # for i, batch in enumerate(total_train_dataloader):
+    #     if difficult_result[i] == difficult_result_max:
+    #         subset_id[-1].append(i)
+    #         continue
+    #     level = int(subset_quantity * (difficult_result[i] - difficult_result_min) / gap)
+    #     # subset_id[level].append(batch)
+    #     subset_id[level].append(i)
+
+    subset = []
+    for i in range(subset_quantity):
+        subset.append([])
+    for i, batch in enumerate(total_train_dataloader):
+        if difficult_result[i] == difficult_result_max:
+            subset[-1].append(batch)
+            continue
+        level = int(subset_quantity * (difficult_result[i] - difficult_result_min) / gap)
+        subset[level].append(batch)
+
+    logger.info("难度评估已完成")
+
+    return subset
+
     """ Train the model """
     if args.local_rank in [-1, 0]:
         tb_writer = SummaryWriter()
@@ -102,23 +257,23 @@ def train(args, train_dataset, model, tokenizer):
 
     # notice 难度划分
     curriculum_sets_temp = []
-    curriculum_sets_temp_id = Difficulty_Evaluation(args, train_dataset)
-    for i,subset_id in enumerate(curriculum_sets_temp_id):
-        random.shuffle(subset_id)
-        # 如果subset_id过于小，就不采样了
-        if len(subset_id) > (len(train_dataset)/(subset_quantity*subset_quantity)):
-            train_sampler = torch.utils.data.sampler.SubsetRandomSampler(
-                subset_id[0 : int((len(subset_id)/subset_quantity))]
-            )
+
+    # # done 如何保证课程被采样了
+    logger.info("采用DE函数")
+    diff_eval_result = Difficulty_Evaluation(args, train_dataset)
+    for i,subset in enumerate(diff_eval_result):
+        gate = (len(train_dataset)/args.train_batch_size)/(subset_quantity)
+        print("第",i,"个 num:",len(subset)," 阈值 ",gate)
+        random.shuffle(subset)
+        # 如果subset过于小，就不采样了
+        if len(subset) > gate:
+            curriculum_sets_temp.append(subset[0,gate])
         else:
-            train_sampler = torch.utils.data.sampler.SubsetRandomSampler(subset_id)
-        curriculum_sets_temp.append(
-            DataLoader(train_dataset, sampler=train_sampler, batch_size=args.train_batch_size)
-        )
+            curriculum_sets_temp.append(subset)
+
 
     # 随机划分
-    # for temp in Difficulty_Evaluation_Randomly(args,train_dataset):
-    #     curriculum_sets_temp.append(DataLoader(train_dataset, sampler=temp, batch_size=args.train_batch_size))
+    # curriculum_sets_temp = Difficulty_Evaluation_Randomly(args,train_dataset)
 
     # 先添加全部任务
     curriculum_sets = []
@@ -238,7 +393,7 @@ def train(args, train_dataset, model, tokenizer):
             model.train()
             batch = tuple(t.to(args.device) for t in batch)
 
-            print("batch_size",batch[0].shape)
+            # print("batch_size",batch[0].shape)
 
             inputs = {
                 "input_ids": batch[0],
@@ -779,7 +934,10 @@ def main():
     # Setup CUDA, GPU & distributed training
     if args.local_rank == -1 or args.no_cuda:
         # notice GPU 编号
-        device = torch.device("cuda:{}".format(args.cuda_num) if torch.cuda.is_available() and not args.no_cuda else "cpu")
+        # device = torch.device("cuda:{}".format(args.cuda_num) if torch.cuda.is_available() and not args.no_cuda else "cpu")
+        device = torch.device(
+            "cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu"
+        )
         args.n_gpu = 0 if args.no_cuda else torch.cuda.device_count()
     else:  # Initializes the distributed backend which will take care of sychronizing nodes/GPUs
         torch.cuda.set_device(args.local_rank)

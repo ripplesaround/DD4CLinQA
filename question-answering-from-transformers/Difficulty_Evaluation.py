@@ -9,13 +9,15 @@ desc: 用于难度衡量
 参考文章：
 1. Guan, C., Wang, X., Zhang, Q., Chen, R., He, D., & Xie, X. (2019). Towards a deep and unified understanding of deep neural models in NLP. In 36th International Conference on Machine Learning, ICML 2019 (Vol. 2019-June). Retrieved from https://www.microsoft.com/en-us/research/publication/towards-a-deep-and-unified-understanding-of-deep-neural-models-in-nlp/
 '''
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 from pytorch_pretrained_bert import BertModel, BertTokenizer
 from Interpreter import Interpreter
 import json
 import argparse
 import glob
 import logging
-import os
+
 import random
 import timeit
 import matplotlib.pyplot as plt
@@ -58,7 +60,6 @@ except ImportError:
 
 
 
-global phi_model
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -203,7 +204,7 @@ def Difficulty_Evaluation(args, train_dataset):
     :param args: 划分成 n 个subset
     :param train_dataset: 全部数据集
     """
-
+    logger.info("开始难度评估")
     if args.local_rank in [-1, 0]:
         tb_writer = SummaryWriter()
 
