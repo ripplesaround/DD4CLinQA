@@ -1,15 +1,13 @@
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
+from geomloss import SamplesLoss
 
-subset_quantity = 3
-subset_id = [1,5,6,8,0]
-print(subset_id[0 : int((len(subset_id)/subset_quantity))])
-train_sampler = torch.utils.data.sampler.SubsetRandomSampler(
-                subset_id[0 : int((len(subset_id)/subset_quantity))]
-            )
-print(len(train_sampler))
-train_sampler = torch.utils.data.sampler.SubsetRandomSampler(
-                subset_id
-            )
-print(len(train_sampler))
+X_i = torch.randn([10,10])
+Y_j = torch.randn([10,10])
+
+blur = .05
+OT_solver = SamplesLoss("sinkhorn", p=2, blur=blur,
+                        scaling=.9, debias=False, potentials=True)
+F_i, G_j = OT_solver(X_i, Y_j)
+
+print(F_i)
+print(G_j)

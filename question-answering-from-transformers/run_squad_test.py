@@ -21,13 +21,15 @@
 
 """
 
-from pytorch_pretrained_bert import BertModel, BertTokenizer
-from Interpreter import Interpreter
-import json
+import os
+# notice 制定GPU
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+import time
 import argparse
 import glob
 import logging
-import os
+
+
 import random
 import timeit
 
@@ -35,7 +37,12 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 from torch.utils.data.distributed import DistributedSampler
+import torch.nn as nn
+import torch.nn.functional as F
 from tqdm import tqdm, trange
+from geomloss import SamplesLoss
+
+# from Difficulty_Evaluation import Difficulty_Evaluation, Difficulty_Evaluation_Randomly
 
 import transformers
 from transformers import (
@@ -70,323 +77,205 @@ logger.setLevel(logging.INFO)
 MODEL_CONFIG_CLASSES = list(MODEL_FOR_QUESTION_ANSWERING_MAPPING.keys())
 MODEL_TYPES = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
 
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
 def set_seed(args):
-    random.seed(args.seed)
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
-    if args.n_gpu > 0:
-        torch.cuda.manual_seed_all(args.seed)
+    # 不固定随机种子，采用多样性
+    # random.seed(args.seed)
+    # np.random.seed(args.seed)
+    # torch.manual_seed(args.seed)
+    # if args.n_gpu > 0:
+    #     torch.cuda.manual_seed_all(args.seed)
+    random.seed(time.time())
+    np.random.seed(int(time.time()))
+    torch.manual_seed(int(time.time()))
 
 
 def to_list(tensor):
     return tensor.detach().cpu().tolist()
 
-
-def Difficulty_Evaluation(args, train_dataset, model, tokenizer):
-    """
-    用来对数据集进行难度进行划分，将teacher的f1分数用作难度衡量
-    :param args: 划分成 n 个subset
-    :param train_dataset: 全部数据集
-    :param model: 用的模型
-    :param tokenizer: label
-    """
-
-    if args.local_rank in [-1, 0]:
-        tb_writer = SummaryWriter()
-
-    # 构造meta-dataset
+def Difficulty_Evaluation_Randomly(args, train_dataset):
+    logger.info("随机划分")
     subset_quantity = args.div_subset
     n_train = len(train_dataset)
     split = n_train // subset_quantity
     indices = list(range(n_train))
     random.shuffle(indices)
     train_sampler = []
+
+    # 1,12,123
+    temp = []
     for i in range(subset_quantity - 1):
-        train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(indices[i * split:(i + 1) * split]))
-    train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(indices[(subset_quantity - 1) * split:]))
+        temp = []
+        for j in range(i+1):
+            temp += indices[j * split: j * split + int(1 / 3 * split)]
+        train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(temp))
+    train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(
+        temp + indices[(subset_quantity - 1) * split: (subset_quantity - 1) * split + int(1 / 3 * split)] )
+    )
 
-    meta_datasets = []
-    args.train_batch_size = args.per_gpu_train_batch_size * max(1, args.n_gpu)
+    #1 2 3
+    # for i in range(subset_quantity):
+    #     train_sampler.append(indices[i * split: i * split + int(1 / 3 * split)])
+
+    result = []
     for i in range(subset_quantity):
-        meta_datasets.append(DataLoader(train_dataset, sampler=train_sampler[i], batch_size=args.train_batch_size))
+        result.append(DataLoader(train_dataset, sampler=train_sampler[i], batch_size=args.train_batch_size))
+    return result
 
-    # 对每一个teacher进行训练，在原来的meta-dataset上
-    # saved_teacher_model_dir = []
-    # for current_teacher_id in range(subset_quantity):
-    #     if args.max_steps > 0:
-    #         t_total = args.max_steps
-    #         args.num_train_epochs = args.max_steps // (
-    #                     len(meta_datasets[current_teacher_id]) // args.gradient_accumulation_steps) + 1
-    #     else:
-    #         t_total = len(meta_datasets[current_teacher_id]) // args.gradient_accumulation_steps * args.num_train_epochs
-    #
-    #     # todo 分模型进行训练，保存
-    #
-    #     # Prepare optimizer and schedule (linear warmup and decay)
-    #     no_decay = ["bias", "LayerNorm.weight"]
-    #     optimizer_grouped_parameters = [
-    #         {
-    #             "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)],
-    #             "weight_decay": args.weight_decay,
-    #         },
-    #         {
-    #             "params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)],
-    #             "weight_decay": 0.0
-    #         },
-    #     ]
-    #     optimizer = AdamW(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
-    #     scheduler = get_linear_schedule_with_warmup(
-    #         optimizer, num_warmup_steps=args.warmup_steps, num_training_steps=t_total
-    #     )
-    #
-    #     # Check if saved optimizer or scheduler states exist
-    #     if os.path.isfile(os.path.join(args.model_name_or_path, "optimizer.pt")) and os.path.isfile(
-    #             os.path.join(args.model_name_or_path, "scheduler.pt")
-    #     ):
-    #         # Load in optimizer and scheduler states
-    #         optimizer.load_state_dict(torch.load(os.path.join(args.model_name_or_path, "optimizer.pt")))
-    #         scheduler.load_state_dict(torch.load(os.path.join(args.model_name_or_path, "scheduler.pt")))
-    #
-    #     if args.fp16:
-    #         try:
-    #             from apex import amp
-    #         except ImportError:
-    #             raise ImportError(
-    #                 "Please install apex from https://www.github.com/nvidia/apex to use fp16 training.")
-    #             model, optimizer = amp.initialize(model, optimizer, opt_level=args.fp16_opt_level)
-    #
-    #     # multi-gpu training (should be after apex fp16 initialization)
-    #     if args.n_gpu > 1:
-    #         model = torch.nn.DataParallel(model)
-    #
-    #     # Distributed training (should be after apex fp16 initialization)
-    #     if args.local_rank != -1:
-    #         model = torch.nn.parallel.DistributedDataParallel(
-    #             model, device_ids=[args.local_rank], output_device=args.local_rank, find_unused_parameters=True
-    #         )
-    #
-    #     # Train each teacher
-    #     # todo 老师的训练步骤和学生是否相同？
-    #     logger.info("***** Step 1： Running training on teachers " + str(current_teacher_id) + " *****")
-    #     logger.info("S1  Num examples = %d", len(meta_datasets[current_teacher_id]))
-    #     logger.info("S1  Num Epochs = %d", args.num_train_epochs)
-    #     logger.info("S1  Instantaneous batch size per GPU = %d", args.per_gpu_train_batch_size)
-    #     logger.info(
-    #         "S1  Total train batch size (w. parallel, distributed & accumulation) = %d",
-    #         args.train_batch_size
-    #         * args.gradient_accumulation_steps
-    #         * (torch.distributed.get_world_size() if args.local_rank != -1 else 1),
-    #     )
-    #     logger.info("S1  Gradient Accumulation steps = %d", args.gradient_accumulation_steps)
-    #     logger.info("S1  Total optimization steps = %d", t_total)
-    #
-    #     global_step = 1
-    #     epochs_trained = 0
-    #     steps_trained_in_current_epoch = 0
-    #     # Check if continuing training from a checkpoint
-    #     if os.path.exists(args.model_name_or_path):
-    #         try:
-    #             # set global_step to gobal_step of last saved checkpoint from model path
-    #             checkpoint_suffix = args.model_name_or_path.split("-")[-1].split("/")[0]
-    #             global_step = int(checkpoint_suffix)
-    #             epochs_trained = global_step // (
-    #                         len(meta_datasets[current_teacher_id]) // args.gradient_accumulation_steps)
-    #             steps_trained_in_current_epoch = global_step % (
-    #                     len(meta_datasets[current_teacher_id]) // args.gradient_accumulation_steps)
-    #             logger.info("  Continuing training from checkpoint, will skip to saved global_step")
-    #             logger.info("  Continuing training from epoch %d", epochs_trained)
-    #             logger.info("  Continuing training from global step %d", global_step)
-    #             logger.info("  Will skip the first %d steps in the first epoch", steps_trained_in_current_epoch)
-    #         except ValueError:
-    #             logger.info("  Starting fine-tuning.")
-    #
-    #     tr_loss, logging_loss = 0.0, 0.0
-    #     model.zero_grad()
-    #     train_iterator = trange(
-    #         epochs_trained, int(args.num_train_epochs), desc="Epoch", disable=args.local_rank not in [-1, 0]
-    #     )
-    #     # Added here for reproductibility
-    #     set_seed(args)
-    #
-    #     for _ in train_iterator:
-    #         epoch_iterator = tqdm(meta_datasets[current_teacher_id], desc="Iteration",
-    #                               disable=args.local_rank not in [-1, 0])
-    #         for step, batch in enumerate(epoch_iterator):
-    #
-    #             # Skip past any already trained steps if resuming training
-    #             if steps_trained_in_current_epoch > 0:
-    #                 steps_trained_in_current_epoch -= 1
-    #                 continue
-    #
-    #             model.train()
-    #             batch = tuple(t.to(args.device) for t in batch)
-    #
-    #             inputs = {
-    #                 "input_ids": batch[0],
-    #                 "attention_mask": batch[1],
-    #                 "token_type_ids": batch[2],
-    #                 "start_positions": batch[3],
-    #                 "end_positions": batch[4],
-    #             }
-    #
-    #             if args.model_type in ["xlm", "roberta", "distilbert", "camembert", "bart", "longformer"]:
-    #                 del inputs["token_type_ids"]
-    #
-    #             if args.model_type in ["xlnet", "xlm"]:
-    #                 inputs.update({"cls_index": batch[5], "p_mask": batch[6]})
-    #                 if args.version_2_with_negative:
-    #                     inputs.update({"is_impossible": batch[7]})
-    #                 if hasattr(model, "config") and hasattr(model.config, "lang2id"):
-    #                     inputs.update(
-    #                         {"langs": (torch.ones(batch[0].shape, dtype=torch.int64) * args.lang_id).to(args.device)}
-    #                     )
-    #
-    #             outputs = model(**inputs)
-    #             # model outputs are always tuple in transformers (see doc)
-    #             loss = outputs[0]
-    #
-    #             if args.n_gpu > 1:
-    #                 loss = loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
-    #             if args.gradient_accumulation_steps > 1:
-    #                 loss = loss / args.gradient_accumulation_steps
-    #
-    #             if args.fp16:
-    #                 with amp.scale_loss(loss, optimizer) as scaled_loss:
-    #                     scaled_loss.backward()
-    #             else:
-    #                 loss.backward()
-    #
-    #             tr_loss += loss.item()
-    #             if (step + 1) % args.gradient_accumulation_steps == 0:
-    #                 if args.fp16:
-    #                     torch.nn.utils.clip_grad_norm_(amp.master_params(optimizer), args.max_grad_norm)
-    #                 else:
-    #                     torch.nn.utils.clip_grad_norm_(model.parameters(), args.max_grad_norm)
-    #
-    #                 optimizer.step()
-    #                 scheduler.step()  # Update learning rate schedule
-    #                 model.zero_grad()
-    #                 global_step += 1
-    #
-    #                 # Log metrics
-    #                 if args.local_rank in [-1, 0] and args.logging_steps > 0 and global_step % args.logging_steps == 0:
-    #                     # Only evaluate when single GPU otherwise metrics may not average well
-    #                     if args.local_rank == -1 and args.evaluate_during_training:
-    #                         results = evaluate(args, model, tokenizer)
-    #                         for key, value in results.items():
-    #                             tb_writer.add_scalar("eval_{}".format(key), value, global_step)
-    #                     tb_writer.add_scalar("lr", scheduler.get_lr()[0], global_step)
-    #                     tb_writer.add_scalar("loss", (tr_loss - logging_loss) / args.logging_steps, global_step)
-    #                     logging_loss = tr_loss
-    #
-    #                 # Save model checkpoint
-    #                 if args.local_rank in [-1, 0] and args.save_steps > 0 and global_step % args.save_steps == 0:
-    #                     output_dir = os.path.join(args.output_dir, "checkpoint-{}".format(global_step))
-    #                     # Take care of distributed/parallel training
-    #                     model_to_save = model.module if hasattr(model, "module") else model
-    #                     model_to_save.save_pretrained(output_dir)
-    #                     tokenizer.save_pretrained(output_dir)
-    #
-    #                     torch.save(args,
-    #                                os.path.join(output_dir, "teacher_", str(current_teacher_id), "_training_args.bin"))
-    #                     logger.info("Saving model checkpoint to %s", output_dir)
-    #
-    #                     torch.save(optimizer.state_dict(), "teacher_", str(current_teacher_id),
-    #                                os.path.join(output_dir, "optimizer.pt"))
-    #                     torch.save(scheduler.state_dict(), "teacher_", str(current_teacher_id),
-    #                                os.path.join(output_dir, "scheduler.pt"))
-    #                     logger.info("Saving optimizer and scheduler states to %s", output_dir)
-    #
-    #             if args.max_steps > 0 and global_step > args.max_steps:
-    #                 epoch_iterator.close()
-    #                 break
-    #         if args.max_steps > 0 and global_step > args.max_steps:
-    #             train_iterator.close()
-    #             break
-    #
-    #     if args.local_rank in [-1, 0]:
-    #         tb_writer.close()
-    #
-    #     logger.info("S1 teacher(%s) global_step = %s, average loss = %s", current_teacher_id, global_step, tr_loss)
-    #
-    #     # save teacher model
-    #     # 保存到每一个单独的文件夹里
-    #     if args.do_train and (args.local_rank == -1 or torch.distributed.get_rank() == 0):
-    #         output_dir_teacher = args.output_dir+"teacher_"+str(current_teacher_id)+"/"
-    #         logger.info("Saving teacher %s model checkpoint to %s", current_teacher_id, output_dir_teacher)
-    #         # Save a trained model, configuration and tokenizer using `save_pretrained()`.
-    #         # They can then be reloaded using `from_pretrained()`
-    #         # Take care of distributed/parallel training
-    #         model_to_save = model.module if hasattr(model, "module") else model
-    #         model_to_save.save_pretrained(output_dir_teacher)
-    #         tokenizer.save_pretrained(output_dir_teacher)
-    #         saved_teacher_model_dir.append(output_dir_teacher)
+def cal_diff(x, y, norm="org", criterion =nn.KLDivLoss() ):
+    if norm == "softmax":
+        x = F.softmax(x)
+        y = F.softmax(y)
+    elif norm == "logsoftmax":
+        x = F.log_softmax(x)
+        y = F.log_softmax(y)
+    elif norm == "line":
+        # logger.info("使用线性归一化")
+        x = linear_normalization(x)
+        y = linear_normalization(y)
+    elif norm == "Gaussian":
+        z = 1
+        # 实现高斯分布
+        # transform_BZ = transforms.Normalize(
+        #     mean=[0.5, 0.5, 0.5],  # 取决于数据集
+        #     std=[0.5, 0.5, 0.5]
+        # )
+        # logger.info("使用高斯分布归一化")
 
-    # todo 难度测评后该如何利用
+    # 每个batch一起算
+    # KLloss = criterion(x, y)
+    # return KLloss.item()
 
-    ################################
-    # notice 计算熵的方法来划分
-    # 关键在于如何去计算
+    # 每个batch 内单独算，最后算一个和
+    dim0 = x.shape[0]
+    result = 0.0
+    blur = .05
+    OT_solver = SamplesLoss("sinkhorn", p=2, blur=blur,
+                            scaling=.9, debias=False, potentials=True)
+    for i in range(dim0):
+        KLloss = criterion(x[i], y[i])
+        result += KLloss.item()
 
-    # extract the Phi we need to explain
-    # notice 这里的函数可以换成
+        # change wgan
+        # F_i, G_j = OT_solver(x[i], y[i])
+        # # print("F_i ",torch.sum(F_i).item())
+        # result += (torch.sum(F_i).item())
 
-    def Phi(x):
-        global model
-        x = x.unsqueeze(0)
-        attention_mask = torch.ones(x.shape[:2]).to(x.device)
-        extended_attention_mask = attention_mask.unsqueeze(1).unsqueeze(2)
-        extended_attention_mask = extended_attention_mask.to(dtype=torch.float)
-        extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
-        # extract the 3rd layer
-        model_list = model.encoder.layer[:3]
-        hidden_states = x
-        for layer_module in model_list:
-            hidden_states = layer_module(hidden_states, extended_attention_mask)
-        return hidden_states[0]
-    
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    tokenizer = BertTokenizer.from_pretrained("/home/fwx/model_pytorch/bert_base_uncased")
-    # load bert model
-    model = BertModel.from_pretrained("/home/fwx/model_pytorch/bert_base_uncased").to(device)
-    for param in model.parameters():
-        param.requires_grad = False
-    model.eval()
-    # here, we load the regularization we already calculated for simplicity
-    regularization = json.load(open("regular.json", "r"))
 
-    for item in meta_datasets[0]:
-        print(len(item))
 
-        print(item[0])
+    return result / dim0
 
-        # words = ["[CLS]"] + tokenizer.tokenize(item) + ["[SEP]"]
-        #
-        # # get the x (here we get x by hacking the code in the bert package)
-        # tokenized_ids = tokenizer.convert_tokens_to_ids(words)
-        # segment_ids = [0 for _ in range(len(words))]
-        # token_tensor = torch.tensor([tokenized_ids], device=device)
-        # segment_tensor = torch.tensor([segment_ids], device=device)
-        # x = model.embeddings(token_tensor, segment_tensor)[0]
-        # notice RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu!
-        # here, we load the regularization we already calculated for simplicity
-        # regularization = json.load(open("regular.json", "r"))
+def linear_normalization(x):
+    temp_min = torch.min(x)
+    temp_max = torch.max(x)
+    x = (x-temp_min)/(temp_max-temp_min)
+    return x
 
-        interpreter = Interpreter(x=item[0], Phi=Phi, regularization=regularization).to(device)
-        interpreter.optimize(iteration=5000, lr=0.01, show_progress=True)
+def Difficulty_Evaluation(args, train_dataset):
+    """
+    用来对数据集进行难度进行划分，将teacher的f1分数用作难度衡量
+    :param args: 划分成 n 个subset
+    :param train_dataset: 全部数据集
+    """
+    logger.info("开始DE难度评估")
+    if args.local_rank in [-1, 0]:
+            tb_writer = SummaryWriter()
 
-        print("-------------------------")
-        # 平均值
-        print("mean: ",sum(interpreter.get_sigma()) / len(interpreter.get_sigma()))
-        # 最小值
-        print("min: ",min(interpreter.get_sigma()))
-        # 最大差值
-        print("diffenerce: ",max(interpreter.get_sigma()) - min(interpreter.get_sigma()))
+    train_sampler_total = RandomSampler(train_dataset) if args.local_rank == -1 else DistributedSampler(
+            train_dataset)
+    total_train_dataloader = DataLoader(train_dataset, sampler=train_sampler_total,
+                                            batch_size=args.train_batch_size)
+    subset_quantity = args.div_subset
 
-        interpreter.get_sigma()
+    args.model_type = args.model_type.lower()
+    config = AutoConfig.from_pretrained(
+        args.config_name if args.config_name else args.diff_model_name_or_path,
+        cache_dir=args.cache_dir if args.cache_dir else None,
+        # 输出中间状态
+        output_hidden_states=True,
+    )
+    tokenizer = AutoTokenizer.from_pretrained(
+        args.tokenizer_name if args.tokenizer_name else args.diff_model_name_or_path,
+        do_lower_case=args.do_lower_case,
+        cache_dir=args.cache_dir if args.cache_dir else None,
+        use_fast=False,
+        # SquadDataset is not compatible with Fast tokenizers which have a smarter overflow handeling
+    )
 
+    phi_model = AutoModelForQuestionAnswering.from_pretrained(
+        args.diff_model_name_or_path,
+        from_tf=bool(".ckpt" in args.diff_model_name_or_path),
+        config=config,
+        cache_dir=args.cache_dir if args.cache_dir else None,
+        # output_hidden_states = True,
+    )
+
+    phi_model.to(args.device)
+    phi_model.eval()
+
+    def Phi(Phi_batch):
+        # 可以直接输入结果
+        phi_model.eval()
+        with torch.no_grad():
+            inputs = {
+                "input_ids": Phi_batch[0],
+                "attention_mask": Phi_batch[1],
+                "token_type_ids": Phi_batch[2],
+            }
+            if args.model_type in ["xlm", "roberta", "distilbert", "camembert", "bart", "longformer"]:
+                del inputs["token_type_ids"]
+            outputs = phi_model(**inputs)
+            # print(type(outputs))
+            # 只看压缩情况
+            # print(len(outputs.hidden_states))   #13
+            # print(outputs.hidden_states[0].shape)  # 48 384 768 #embedding
+            # print(outputs.hidden_states[-1].shape) # 48 384 768
+
+        return outputs.hidden_states[0].to(args.device), outputs.hidden_states[-1].to(args.device)  # 48 384
+
+    difficult_result = []
+
+    method = "line"
+    print(method)
+    for batch in tqdm(total_train_dataloader):
+        phi_model.eval()
+        batch = tuple(t.to(args.device) for t in batch)
+        embedding, output = Phi(batch)
+
+        difficult_result.append(cal_diff(embedding, output,method))
+
+    difficult_result = np.array(difficult_result)
+
+    difficult_result_max = max(difficult_result)
+    difficult_result_min = min(difficult_result)
+    gap = difficult_result_max - difficult_result_min
+
+    # subset_id = []
+    # for i in range(subset_quantity):
+    #     subset_id.append([])
+    # for i, batch in enumerate(total_train_dataloader):
+    #     if difficult_result[i] == difficult_result_max:
+    #         subset_id[-1].append(i)
+    #         continue
+    #     level = int(subset_quantity * (difficult_result[i] - difficult_result_min) / gap)
+    #     # subset_id[level].append(batch)
+    #     subset_id[level].append(i)
+
+    subset = []
+    for i in range(subset_quantity):
+        subset.append([])
+    for i, batch in enumerate(total_train_dataloader):
+        if difficult_result[i] == difficult_result_max:
+            subset[-1].append(batch)
+            continue
+        level = int(subset_quantity * (difficult_result[i] - difficult_result_min) / gap)
+        subset[level].append(batch)
+
+    logger.info("难度评估已完成")
+
+    return subset
 
 def train(args, train_dataset, model, tokenizer):
     """ Train the model """
@@ -394,40 +283,51 @@ def train(args, train_dataset, model, tokenizer):
         tb_writer = SummaryWriter()
 
     args.train_batch_size = args.per_gpu_train_batch_size * max(1, args.n_gpu)
-
-
-
-
-
     train_sampler_total = RandomSampler(train_dataset) if args.local_rank == -1 else DistributedSampler(train_dataset)
-
-    # 难度划分
-    Difficulty_Evaluation(args,train_dataset, model, tokenizer)
-    
-    
-    return 0,0
-
-    # 随机划分 sub-set training
     subset_quantity = args.div_subset
-    n_train = len(train_dataset)
-    split = n_train // subset_quantity
-    indices = list(range(n_train))
-    random.shuffle(indices)
-    train_sampler = []
-    # todo 可以在这里修改每一个轮次的训练集，  1，2，3，total 还是 1，12，123，total
-    # 还可以搞一个1/N的
-    for i in range(subset_quantity - 1):
-        train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(indices[i * split : i * split + int(1 / 3 * split)]))
-    train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler( indices[(subset_quantity - 1) * split: (subset_quantity - 1) * split + int(1 / 3 * split)] ))
+
+    # notice 难度划分
+    curriculum_sets_temp = []
+
+    # # done 如何保证课程被采样了
+    diff_eval_result = Difficulty_Evaluation(args, train_dataset)
+    # change 多trainj
+    for _ in range(int(args.num_train_epochs)):
+        for i,subset in enumerate(diff_eval_result):
+            gate = int((len(train_dataset)/args.train_batch_size)/(subset_quantity))
+            print("第",i,"个 num:",len(subset)," 阈值 ",gate)
+            random.shuffle(subset)
+            # 如果subset过于小，就不采样了
+            if len(subset) > gate:
+                # subset = list(subset)
+                # 决定没一个采样的长度
+                curriculum_sets_temp.append(subset[0:int( len(subset) /subset_quantity)])
+            # elif(len(subset) <= int(gate/subset_quantity)):
+            #     for i in range(subset_quantity):
+            #         curriculum_sets_temp.append(subset)
+            else:
+                curriculum_sets_temp.append(subset)
 
 
+
+    # 随机划分
+    # curriculum_sets_temp = Difficulty_Evaluation_Randomly(args,train_dataset)
+
+    # 先添加全部任务
     curriculum_sets = []
-    args.train_batch_size = args.per_gpu_train_batch_size * max(1, args.n_gpu)
-    for i in range(subset_quantity):
-        curriculum_sets.append(DataLoader(train_dataset, sampler=train_sampler[i], batch_size=args.train_batch_size))
     total_train_dataloader = DataLoader(train_dataset, sampler=train_sampler_total, batch_size=args.train_batch_size)
-    curriculum_sets.append(total_train_dataloader)
-    curriculum_sets.append(total_train_dataloader)
+    for i in range(int(args.num_train_epochs)):
+        curriculum_sets.append(total_train_dataloader)
+
+    # 再添加课程任务
+    # notice 课程任务顺序
+    curriculum_sets += curriculum_sets_temp
+    # args.train_batch_size = args.per_gpu_train_batch_size * max(1, args.n_gpu)
+    # for i in range(subset_quantity):
+    #     curriculum_sets.append(DataLoader(train_dataset, sampler=train_sampler[i], batch_size=args.train_batch_size))
+    # total_train_dataloader = DataLoader(train_dataset, sampler=train_sampler_total, batch_size=args.train_batch_size)
+    # curriculum_sets.append(total_train_dataloader)
+    # curriculum_sets.append(total_train_dataloader)
 
     # CL阶段训练
 
@@ -514,7 +414,7 @@ def train(args, train_dataset, model, tokenizer):
     model.zero_grad()
     train_iterator = trange(
         # epochs_trained, int(args.num_train_epochs), desc="Epoch", disable=args.local_rank not in [-1, 0]
-        epochs_trained, int(subset_quantity + 2), desc = "Epoch", disable = args.local_rank not in [-1, 0]
+        epochs_trained, int(len(curriculum_sets)), desc = "Epoch", disable = args.local_rank not in [-1, 0]
     )
     # Added here for reproductibility
     set_seed(args)
@@ -531,6 +431,8 @@ def train(args, train_dataset, model, tokenizer):
 
             model.train()
             batch = tuple(t.to(args.device) for t in batch)
+
+            # print("batch_size",batch[0].shape)
 
             inputs = {
                 "input_ids": batch[0],
@@ -555,6 +457,11 @@ def train(args, train_dataset, model, tokenizer):
             outputs = model(**inputs)
             # model outputs are always tuple in transformers (see doc)
             loss = outputs[0]
+
+            # notice 添加KL的loss
+            # pa = 0.01
+            # for i in range(args.train_batch_size):
+            #     loss += ((pa)*cal_diff(x=outputs.hidden_states[0], y=outputs.hidden_states[-1], norm="line"))
 
             if args.n_gpu > 1:
                 loss = loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
@@ -696,7 +603,9 @@ def evaluate(args, model, tokenizer, prefix=""):
                 )
 
             else:
-                start_logits, end_logits = output
+                # change
+                start_logits = output[0]
+                end_logits = output[1]
                 result = SquadResult(unique_id, start_logits, end_logits)
 
             all_results.append(result)
@@ -801,7 +710,7 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
                 examples = processor.get_dev_examples(args.data_dir, filename=args.predict_file)
             else:
                 examples = processor.get_train_examples(args.data_dir, filename=args.train_file)
-    
+
         features, dataset = squad_convert_examples_to_features(
             examples=examples,
             tokenizer=tokenizer,
@@ -812,7 +721,6 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
             return_dataset="pt",
             threads=args.threads,
         )
-
 
         if args.local_rank in [-1, 0]:
             logger.info("Saving features into cached file %s", cached_features_file)
@@ -860,6 +768,21 @@ def main():
         default=3,
         type=int,
         help="划分子集的数量",
+    )
+
+    parser.add_argument(
+        "--cuda_num",
+        default=3,
+        type=int,
+        help="cuda用哪个",
+    )
+
+    parser.add_argument(
+        "--diff_model_name_or_path",
+        default=None,
+        type=str,
+        required=True,
+        help="用于难度衡量的模型，最好是经过训练的",
     )
 
     # Other parameters
@@ -1056,7 +979,11 @@ def main():
 
     # Setup CUDA, GPU & distributed training
     if args.local_rank == -1 or args.no_cuda:
-        device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
+        # notice GPU 编号
+        # device = torch.device("cuda:{}".format(args.cuda_num) if torch.cuda.is_available() and not args.no_cuda else "cpu")
+        device = torch.device(
+            "cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu"
+        )
         args.n_gpu = 0 if args.no_cuda else torch.cuda.device_count()
     else:  # Initializes the distributed backend which will take care of sychronizing nodes/GPUs
         torch.cuda.set_device(args.local_rank)
@@ -1086,6 +1013,7 @@ def main():
     #     transformers.utils.logging.enable_explicit_format()
     # Set seed
     set_seed(args)
+    # set_seed(time.time())
 
     # Load pretrained model and tokenizer
     if args.local_rank not in [-1, 0]:
@@ -1096,6 +1024,8 @@ def main():
     config = AutoConfig.from_pretrained(
         args.config_name if args.config_name else args.model_name_or_path,
         cache_dir=args.cache_dir if args.cache_dir else None,
+        # notice 输出中间状态
+        output_hidden_states=True,
     )
     tokenizer = AutoTokenizer.from_pretrained(
         args.tokenizer_name if args.tokenizer_name else args.model_name_or_path,
@@ -1122,6 +1052,8 @@ def main():
 
     model.to(args.device)
 
+    print(model)
+
     logger.info("Training/evaluation parameters %s", args)
 
     # Before we do anything with models, we want to ensure that we get fp16 execution of torch.einsum if args.fp16 is set.
@@ -1130,22 +1062,15 @@ def main():
     if args.fp16:
         try:
             import apex
-
             apex.amp.register_half_function(torch, "einsum")
         except ImportError:
             raise ImportError("Please install apex from https://www.github.com/nvidia/apex to use fp16 training.")
 
     # Training
     if args.do_train:
-        print("/n/n    真的在训练！！！/n/n")
         train_dataset = load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False)
-        print("/n/n    就是在训练么！！！/n/n")
-        # Difficulty_Evaluation(args, train_dataset, model, tokenizer)
         global_step, tr_loss = train(args, train_dataset, model, tokenizer)
         logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
-
-    if not args.do_train:
-        print("/n d0_train参数有问题/n/n")
 
     # Save the trained model and the tokenizer
     if args.do_train and (args.local_rank == -1 or torch.distributed.get_rank() == 0):

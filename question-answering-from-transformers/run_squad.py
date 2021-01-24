@@ -23,7 +23,7 @@
 
 import os
 # notice 制定GPU
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 import time
 import argparse
 import glob
@@ -40,7 +40,7 @@ from torch.utils.data.distributed import DistributedSampler
 import torch.nn as nn
 import torch.nn.functional as F
 from tqdm import tqdm, trange
-
+from geomloss import SamplesLoss
 
 # from Difficulty_Evaluation import Difficulty_Evaluation, Difficulty_Evaluation_Randomly
 
@@ -102,8 +102,8 @@ def Difficulty_Evaluation_Randomly(args, train_dataset):
     indices = list(range(n_train))
     random.shuffle(indices)
     train_sampler = []
-    # notice 可以在这里修改每一个轮次的训练集，  1，2，3，total 还是 1，12，123，total
-    # 还可以搞一个1/N的
+
+    # 1,12,123
     temp = []
     for i in range(subset_quantity - 1):
         temp = []
@@ -113,33 +113,57 @@ def Difficulty_Evaluation_Randomly(args, train_dataset):
     train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(
         temp + indices[(subset_quantity - 1) * split: (subset_quantity - 1) * split + int(1 / 3 * split)] )
     )
+
+    #1 2 3
+    # for i in range(subset_quantity):
+    #     train_sampler.append(indices[i * split: i * split + int(1 / 3 * split)])
+
     result = []
     for i in range(subset_quantity):
         result.append(DataLoader(train_dataset, sampler=train_sampler[i], batch_size=args.train_batch_size))
     return result
 
-def cal_diff(x, y, norm="org", criterion =nn.KLDivLoss() ):
+def cal_diff(x, y, norm="org", criterion ="wd" ):
     if norm == "softmax":
         x = F.softmax(x)
         y = F.softmax(y)
-    elif norm == "log_softmax":
+    elif norm == "logsoftmax":
         x = F.log_softmax(x)
         y = F.log_softmax(y)
     elif norm == "line":
-        logger.info("使用线性归一化")
+        # logger.info("使用线性归一化")
         x = linear_normalization(x)
         y = linear_normalization(y)
     elif norm == "Gaussian":
+        z = 1
         # 实现高斯分布
         # transform_BZ = transforms.Normalize(
         #     mean=[0.5, 0.5, 0.5],  # 取决于数据集
         #     std=[0.5, 0.5, 0.5]
         # )
-        logger.info("使用高斯分布归一化")
+        # logger.info("使用高斯分布归一化")
 
-    KLloss = criterion(x, y)
-    # print("klloss ", KLoss)
-    return KLloss.item()
+    # 每个batch一起算
+    # KLloss = criterion(x, y)
+    # return KLloss.item()
+
+    # 每个batch 内单独算，最后算一个和
+    dim0 = x.shape[0]
+    result = 0.0
+    blur = .05
+    OT_solver = SamplesLoss("sinkhorn", p=2, blur=blur,
+                            scaling=.9, debias=False, potentials=True)
+    for i in range(dim0):
+        if criterion == "kl":
+            criterion_kl = nn.KLDivLoss()
+            KLloss = criterion_kl(x[i], y[i])
+            result += KLloss.item()
+        else:
+            # change wgan
+            F_i, G_j = OT_solver(x[i], y[i])
+            # print("F_i ",torch.sum(F_i).item())
+            result += (torch.sum(F_i).item())
+    return result / dim0
 
 def linear_normalization(x):
     temp_min = torch.min(x)
@@ -210,11 +234,15 @@ def Difficulty_Evaluation(args, train_dataset):
         return outputs.hidden_states[0].to(args.device), outputs.hidden_states[-1].to(args.device)  # 48 384
 
     difficult_result = []
+
+    method = "line"
+    print(method)
     for batch in tqdm(total_train_dataloader):
         phi_model.eval()
         batch = tuple(t.to(args.device) for t in batch)
         embedding, output = Phi(batch)
-        difficult_result.append(cal_diff(embedding, output))
+
+        difficult_result.append(cal_diff(embedding, output,method))
 
     difficult_result = np.array(difficult_result)
 
@@ -247,6 +275,7 @@ def Difficulty_Evaluation(args, train_dataset):
 
     return subset
 
+def train(args, train_dataset, model, tokenizer):
     """ Train the model """
     if args.local_rank in [-1, 0]:
         tb_writer = SummaryWriter()
@@ -258,18 +287,30 @@ def Difficulty_Evaluation(args, train_dataset):
     # notice 难度划分
     curriculum_sets_temp = []
 
-    # # done 如何保证课程被采样了
-    logger.info("采用DE函数")
+    # done 如何保证课程被采样了
     diff_eval_result = Difficulty_Evaluation(args, train_dataset)
     for i,subset in enumerate(diff_eval_result):
-        gate = (len(train_dataset)/args.train_batch_size)/(subset_quantity)
+        gate = int((len(train_dataset)/args.train_batch_size)/(subset_quantity))
         print("第",i,"个 num:",len(subset)," 阈值 ",gate)
         random.shuffle(subset)
         # 如果subset过于小，就不采样了
         if len(subset) > gate:
-            curriculum_sets_temp.append(subset[0,gate])
+            # subset = list(subset)
+            # 决定没一个采样的长度
+            curriculum_sets_temp.append(subset[0:int( gate /subset_quantity)])
+        # elif(len(subset) <= int(gate/subset_quantity)):
+        #     for i in range(subset_quantity):
+        #         curriculum_sets_temp.append(subset)
         else:
             curriculum_sets_temp.append(subset)
+        # curriculum_sets_temp.append(subset)
+
+    # 不采样的
+    # diff_eval_result = Difficulty_Evaluation(args, train_dataset)
+    # for _ in range(int(args.num_train_epochs)):
+    #     for i, subset in enumerate(diff_eval_result):
+    #         random.shuffle(subset)
+    #         curriculum_sets_temp.append(subset)
 
 
     # 随机划分
@@ -282,13 +323,9 @@ def Difficulty_Evaluation(args, train_dataset):
         curriculum_sets.append(total_train_dataloader)
 
     # 再添加课程任务
+    # notice 课程任务顺序
     curriculum_sets += curriculum_sets_temp
-    # args.train_batch_size = args.per_gpu_train_batch_size * max(1, args.n_gpu)
-    # for i in range(subset_quantity):
-    #     curriculum_sets.append(DataLoader(train_dataset, sampler=train_sampler[i], batch_size=args.train_batch_size))
-    # total_train_dataloader = DataLoader(train_dataset, sampler=train_sampler_total, batch_size=args.train_batch_size)
-    # curriculum_sets.append(total_train_dataloader)
-    # curriculum_sets.append(total_train_dataloader)
+
 
     # CL阶段训练
 
@@ -307,7 +344,8 @@ def Difficulty_Evaluation(args, train_dataset):
         },
         {"params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)], "weight_decay": 0.0},
     ]
-    optimizer = AdamW(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
+    # notice 添加L2正则化
+    optimizer = AdamW(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon,weight_decay=0.01)
     scheduler = get_linear_schedule_with_warmup(
         optimizer, num_warmup_steps=args.warmup_steps, num_training_steps=t_total
     )
@@ -418,6 +456,11 @@ def Difficulty_Evaluation(args, train_dataset):
             outputs = model(**inputs)
             # model outputs are always tuple in transformers (see doc)
             loss = outputs[0]
+
+            # notice 添加KL的loss 或者 wgan的那个w
+            # pa = 0.00001
+            # for i in range(args.train_batch_size):
+            #     loss += ((pa)*cal_diff(x=outputs.hidden_states[0], y=outputs.hidden_states[-1], norm="line",criterion="kl"))
 
             if args.n_gpu > 1:
                 loss = loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
@@ -559,7 +602,9 @@ def evaluate(args, model, tokenizer, prefix=""):
                 )
 
             else:
-                start_logits, end_logits = output
+                # change
+                start_logits = output[0]
+                end_logits = output[1]
                 result = SquadResult(unique_id, start_logits, end_logits)
 
             all_results.append(result)
@@ -978,6 +1023,8 @@ def main():
     config = AutoConfig.from_pretrained(
         args.config_name if args.config_name else args.model_name_or_path,
         cache_dir=args.cache_dir if args.cache_dir else None,
+        # notice 输出中间状态
+        output_hidden_states=True,
     )
     tokenizer = AutoTokenizer.from_pretrained(
         args.tokenizer_name if args.tokenizer_name else args.model_name_or_path,
