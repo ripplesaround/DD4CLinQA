@@ -289,29 +289,28 @@ def train(args, train_dataset, model, tokenizer):
     curriculum_sets_temp = []
 
     # done 如何保证课程被采样了
-    diff_eval_result = Difficulty_Evaluation(args, train_dataset)
-    for i,subset in enumerate(diff_eval_result):
-        gate = int((len(train_dataset)/args.train_batch_size)/(subset_quantity))
-        print("第",i,"个 num:",len(subset)," 阈值 ",gate)
-        random.shuffle(subset)
-        # 如果subset过于小，就不采样了
-        if len(subset) > gate:
-            # subset = list(subset)
-            # 决定没一个采样的长度
-            curriculum_sets_temp.append(subset[0:int( gate /subset_quantity)])
-        # elif(len(subset) <= int(gate/subset_quantity)):
-        #     for i in range(subset_quantity):
-        #         curriculum_sets_temp.append(subset)
-        else:
-            curriculum_sets_temp.append(subset)
-        # curriculum_sets_temp.append(subset)
-
-    # 不采样的
     # diff_eval_result = Difficulty_Evaluation(args, train_dataset)
-    # for _ in range(int(args.num_train_epochs)):
-    #     for i, subset in enumerate(diff_eval_result):
-    #         random.shuffle(subset)
+    # for i,subset in enumerate(diff_eval_result):
+    #     gate = int((len(train_dataset)/args.train_batch_size)/(subset_quantity))
+    #     print("第",i,"个 num:",len(subset)," 阈值 ",gate)
+    #     random.shuffle(subset)
+    #     # 如果subset过于小，就不采样了
+    #     if len(subset) > gate:
+    #         # subset = list(subset)
+    #         # 决定没一个采样的长度
+    #         curriculum_sets_temp.append(subset[0:int( gate /subset_quantity)])
+    #     # elif(len(subset) <= int(gate/subset_quantity)):
+    #     #     for i in range(subset_quantity):
+    #     #         curriculum_sets_temp.append(subset)
+    #     else:
     #         curriculum_sets_temp.append(subset)
+    #     # curriculum_sets_temp.append(subset)
+
+    # notice 消融实验：不采样
+    diff_eval_result = Difficulty_Evaluation(args, train_dataset)
+    for i, subset in enumerate(diff_eval_result):
+        random.shuffle(subset)
+        curriculum_sets_temp.append(subset)
 
 
     # 随机划分
@@ -458,7 +457,7 @@ def train(args, train_dataset, model, tokenizer):
             # model outputs are always tuple in transformers (see doc)
             loss = outputs[0]
 
-            # # notice 添加KL的loss 或者 wgan的那个w
+            # notice 添加KL的loss 或者 wgan的那个w
             # pa = 0.0001
             # for i in range(args.train_batch_size):
             #     loss += ((pa)*
@@ -665,7 +664,6 @@ def evaluate(args, model, tokenizer, prefix=""):
 
     # Compute the F1 and exact scores.
     results = squad_evaluate(examples, predictions)
-    print(args)
     return results
 
 

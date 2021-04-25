@@ -21,7 +21,7 @@ import glob
 import logging
 import os
 # notice gpu编号
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 import random
 import timeit

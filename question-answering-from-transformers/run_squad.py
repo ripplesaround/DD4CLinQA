@@ -156,7 +156,8 @@ def cal_diff(x, y, norm="org", criterion ="wd" ):
     for i in range(dim0):
         if criterion == "kl":
             criterion_kl = nn.KLDivLoss()
-            KLloss = criterion_kl(x[i], y[i])
+            # notice 考虑了KL的不对称性
+            KLloss = (criterion_kl(x[i], y[i])+criterion_kl(y[i], x[i]))/2
             result += KLloss.item()
         else:
             # change wgan
@@ -457,10 +458,14 @@ def train(args, train_dataset, model, tokenizer):
             # model outputs are always tuple in transformers (see doc)
             loss = outputs[0]
 
-            # notice 添加KL的loss 或者 wgan的那个w
-            # pa = 0.00001
+            # # notice 添加KL的loss 或者 wgan的那个w
+            # pa = 0.0001
             # for i in range(args.train_batch_size):
-            #     loss += ((pa)*cal_diff(x=outputs.hidden_states[0], y=outputs.hidden_states[-1], norm="line",criterion="kl"))
+            #     loss += ((pa)*
+            #              ((cal_diff(x=outputs.hidden_states[0], y=outputs.hidden_states[-1], norm="line",criterion="kl")+
+            #               cal_diff(x=outputs.hidden_states[-1], y=outputs.hidden_states[0], norm="line", criterion="kl")
+            #               )/2)
+            #              )
 
             if args.n_gpu > 1:
                 loss = loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
@@ -660,6 +665,7 @@ def evaluate(args, model, tokenizer, prefix=""):
 
     # Compute the F1 and exact scores.
     results = squad_evaluate(examples, predictions)
+    print(args)
     return results
 
 
