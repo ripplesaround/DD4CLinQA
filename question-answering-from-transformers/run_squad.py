@@ -121,6 +121,8 @@ def Difficulty_Evaluation_Randomly(args, train_dataset):
     result = []
     for i in range(subset_quantity):
         result.append(DataLoader(train_dataset, sampler=train_sampler[i], batch_size=args.train_batch_size))
+
+        train_dataset.select()
     return result
 
 def cal_diff(x, y, norm="org", criterion ="wd" ):
