@@ -23,7 +23,7 @@
 
 import os
 # notice 制定GPU
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 import time
 import argparse
 import glob
@@ -103,25 +103,25 @@ def Difficulty_Evaluation_Randomly(args, train_dataset):
     train_sampler = []
 
     # 1,12,123
-    temp = []
-    for i in range(subset_quantity - 1):
-        temp = []
-        for j in range(i+1):
-            temp += indices[j * split: j * split + int(1 / 3 * split)]
-        train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(temp))
-    train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(
-        temp + indices[(subset_quantity - 1) * split: (subset_quantity - 1) * split + int(1 / 3 * split)] )
-    )
+    # temp = []
+    # for i in range(subset_quantity - 1):
+    #     temp = []
+    #     for j in range(i+1):
+    #         temp += indices[j * split: j * split + int(1 / 3 * split)]
+    #     train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(temp))
+    # train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(
+    #     temp + indices[(subset_quantity - 1) * split: (subset_quantity - 1) * split + int(1 / 3 * split)] )
+    # )
 
     #1 2 3
-    # for i in range(subset_quantity):
-    #     train_sampler.append(indices[i * split: i * split + int(1 / 3 * split)])
+    for i in range(subset_quantity):
+        train_sampler.append(indices[i * split: i * split + int(1 / 3 * split)])
+
+    # 采样过的
 
     result = []
     for i in range(subset_quantity):
         result.append(DataLoader(train_dataset, sampler=train_sampler[i], batch_size=args.train_batch_size))
-
-        train_dataset.select()
     return result
 
 def cal_diff(x, y, norm="org", criterion ="wd" ):
@@ -162,7 +162,6 @@ def cal_diff(x, y, norm="org", criterion ="wd" ):
             result += KLloss.item()
         else:
             # change wgan
-            # print("hi")
             F_i, G_j = OT_solver(x[i], y[i])
             # print("F_i ",torch.sum(F_i).item())
             result += (torch.sum(F_i).item())
@@ -238,16 +237,14 @@ def Difficulty_Evaluation(args, train_dataset):
 
     difficult_result = []
 
-    # notice 划分方法
     method = "line"
-    criterion = "wd"
-    logger.info("划分方法 "+method +"   "+ criterion)
+    print(method)
     for batch in tqdm(total_train_dataloader):
         phi_model.eval()
         batch = tuple(t.to(args.device) for t in batch)
         embedding, output = Phi(batch)
 
-        difficult_result.append(cal_diff(embedding, output,method,criterion))
+        difficult_result.append(cal_diff(embedding, output,method))
 
     difficult_result = np.array(difficult_result)
 
@@ -293,33 +290,26 @@ def train(args, train_dataset, model, tokenizer):
     curriculum_sets_temp = []
 
     # done 如何保证课程被采样了
-    diff_eval_result = Difficulty_Evaluation(args, train_dataset)
-    for i,subset in enumerate(diff_eval_result):
-        gate = int((len(train_dataset)/args.train_batch_size)/(subset_quantity))
-        print("第",i,"个 num:",len(subset)," 阈值 ",gate)
-        random.shuffle(subset)
-        # 如果subset过于小，就不采样了
-        if len(subset) > gate:
-            # subset = list(subset)
-            # 决定没一个采样的长度
-            curriculum_sets_temp.append(subset[0:int( gate /subset_quantity)])
-        # elif(len(subset) <= int(gate/subset_quantity)):
-        #     for i in range(subset_quantity):
-        #         curriculum_sets_temp.append(subset)
-        else:
-            curriculum_sets_temp.append(subset)
-        # curriculum_sets_temp.append(subset)
-
-    # 不采样的
     # diff_eval_result = Difficulty_Evaluation(args, train_dataset)
-    # for _ in range(int(args.num_train_epochs)):
-    #     for i, subset in enumerate(diff_eval_result):
-    #         random.shuffle(subset)
+    # for i,subset in enumerate(diff_eval_result):
+    #     gate = int((len(train_dataset)/args.train_batch_size)/(subset_quantity))
+    #     print("第",i,"个 num:",len(subset)," 阈值 ",gate)
+    #     random.shuffle(subset)
+    #     # 如果subset过于小，就不采样了
+    #     if len(subset) > gate:
+    #         # subset = list(subset)
+    #         # 决定没一个采样的长度
+    #         curriculum_sets_temp.append(subset[0:int( gate /subset_quantity)])
+    #     # elif(len(subset) <= int(gate/subset_quantity)):
+    #     #     for i in range(subset_quantity):
+    #     #         curriculum_sets_temp.append(subset)
+    #     else:
     #         curriculum_sets_temp.append(subset)
+    #     # curriculum_sets_temp.append(subset)
 
-
+    # notice 消融实验：随机划分
     # 随机划分
-    # curriculum_sets_temp = Difficulty_Evaluation_Randomly(args,train_dataset)
+    curriculum_sets_temp = Difficulty_Evaluation_Randomly(args,train_dataset)
 
     # 先添加全部任务
     curriculum_sets = []
@@ -462,7 +452,7 @@ def train(args, train_dataset, model, tokenizer):
             # model outputs are always tuple in transformers (see doc)
             loss = outputs[0]
 
-            # # notice 添加KL的loss 或者 wgan的那个w
+            # notice 添加KL的loss 或者 wgan的那个w
             # pa = 0.0001
             # for i in range(args.train_batch_size):
             #     loss += ((pa)*
@@ -669,7 +659,6 @@ def evaluate(args, model, tokenizer, prefix=""):
 
     # Compute the F1 and exact scores.
     results = squad_evaluate(examples, predictions)
-    print(args)
     return results
 
 

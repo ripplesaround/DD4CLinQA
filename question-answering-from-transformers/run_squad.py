@@ -77,7 +77,6 @@ logger.setLevel(logging.INFO)
 MODEL_CONFIG_CLASSES = list(MODEL_FOR_QUESTION_ANSWERING_MAPPING.keys())
 MODEL_TYPES = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
 def set_seed(args):
     # 不固定随机种子，采用多样性
@@ -163,6 +162,7 @@ def cal_diff(x, y, norm="org", criterion ="wd" ):
             result += KLloss.item()
         else:
             # change wgan
+            # print("hi")
             F_i, G_j = OT_solver(x[i], y[i])
             # print("F_i ",torch.sum(F_i).item())
             result += (torch.sum(F_i).item())
@@ -238,14 +238,16 @@ def Difficulty_Evaluation(args, train_dataset):
 
     difficult_result = []
 
+    # notice 划分方法
     method = "line"
-    print(method)
+    criterion = "wd"
+    logger.info("划分方法 "+method +"   "+ criterion)
     for batch in tqdm(total_train_dataloader):
         phi_model.eval()
         batch = tuple(t.to(args.device) for t in batch)
         embedding, output = Phi(batch)
 
-        difficult_result.append(cal_diff(embedding, output,method))
+        difficult_result.append(cal_diff(embedding, output,method,criterion))
 
     difficult_result = np.array(difficult_result)
 

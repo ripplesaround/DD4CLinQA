@@ -10,54 +10,51 @@
 
 # import os
 # # notice 制定GPU
+import datasets
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader, SequentialSampler
 from torch.utils.data.distributed import DistributedSampler
+from transformers import trainer, is_datasets_available
+
 
 # torch.distributed.init_process_group(backend="nccl")
 
-input_size = 5
-output_size = 2
-batch_size = 2
-data_size = 16
+class Trainer_CL(trainer.Trainer):
+    def get_train_dataloader(self):
+        """
+        Returns the training :class:`~torch.utils.data.DataLoader`.
 
-local_rank = 0
-torch.cuda.set_device(local_rank)
-device = torch.device("cuda", local_rank)
+        Will use no sampler if :obj:`self.train_dataset` does not implement :obj:`__len__`, a random sampler (adapted
+        to distributed training if necessary) otherwise.
 
+        Subclass and override this method if you want to inject some custom behavior.
+        """
 
-class RandomDataset(Dataset):
-    def __init__(self, size, length, local_rank):
-        self.len = length
-        self.data = torch.stack([torch.ones(5), torch.ones(5) * 2,
-                                 torch.ones(5) * 3, torch.ones(5) * 4,
-                                 torch.ones(5) * 5, torch.ones(5) * 6,
-                                 torch.ones(5) * 7, torch.ones(5) * 8,
-                                 torch.ones(5) * 9, torch.ones(5) * 10,
-                                 torch.ones(5) * 11, torch.ones(5) * 12,
-                                 torch.ones(5) * 13, torch.ones(5) * 14,
-                                 torch.ones(5) * 15, torch.ones(5) * 16]).to('cuda')
+        print("继承了类 %s   %s",100,self.train_dataset.__len__())
+        if self.train_dataset is None:
+            raise ValueError("Trainer: training requires a train_dataset.")
 
-        self.local_rank = local_rank
+        train_dataset = self.train_dataset
+        if is_datasets_available() and isinstance(train_dataset, datasets.Dataset):
+            train_dataset = self._remove_unused_columns(train_dataset, description="training")
 
-    def __getitem__(self, index):
-        return self.data[index]
-
-    def __len__(self):
-        return self.len
+        train_sampler = self._get_train_sampler()
+        # 在这里添加一个id序列，让他经过相同的sample操作，得到变换后的id序列
+        # self.train_dataset.__len__()
 
 
-dataset = RandomDataset(input_size, data_size, local_rank)
-sampler = SequentialSampler(dataset)
-rand_loader = DataLoader(dataset=dataset,
-                         batch_size=batch_size,
-                         sampler=sampler)
+        result = DataLoader(
+            self.train_dataset,
+            batch_size=self.args.train_batch_size,
+            # shuffle=True,
+            sampler=train_sampler,
+            collate_fn=self.data_collator,
+            drop_last=self.args.dataloader_drop_last,
+            num_workers=self.args.dataloader_num_workers,
+            pin_memory=self.args.dataloader_pin_memory,
+            # generator=g,
+        )
 
-e = 0
-while e < 2:
-    t = 0
-    # sampler.set_epoch(e)
-    for data in rand_loader:
-        print(data)
-    e += 1
+
+        return result

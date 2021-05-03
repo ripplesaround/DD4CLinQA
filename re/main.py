@@ -1,6 +1,26 @@
-import torch
-from geomloss import SamplesLoss
-from torch.utils.data import random_split
+from torch.utils.data import RandomSampler
 
-result = random_split(range(10), [3, 7], generator=torch.Generator().manual_seed(42))
-print(list(result[0]))
+
+class Person:
+  def __init__(self, fname, lname):
+    self.firstname = fname
+    self.lastname = lname
+
+  def printname(self):
+    print(self.firstname, self.lastname)
+
+class Student(Person):
+  def printname(self):
+      print("hi")
+      print(self.firstname, self.lastname)
+
+# x = Student("Elon", "Musk")
+# x.printname()
+train_dataset_idx = range(100)
+test1 = RandomSampler(train_dataset_idx)
+test2 = RandomSampler(train_dataset_idx)
+for i,item in enumerate(test1):
+    print("%s",item)
+# print("---")
+# for i, item in enumerate(test2):
+#     print("%s", item)

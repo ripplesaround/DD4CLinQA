@@ -23,7 +23,7 @@
 
 import os
 # notice 制定GPU
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 import time
 import argparse
 import glob
@@ -77,7 +77,6 @@ logger.setLevel(logging.INFO)
 MODEL_CONFIG_CLASSES = list(MODEL_FOR_QUESTION_ANSWERING_MAPPING.keys())
 MODEL_TYPES = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
 def set_seed(args):
     # 不固定随机种子，采用多样性
@@ -121,6 +120,8 @@ def Difficulty_Evaluation_Randomly(args, train_dataset):
     result = []
     for i in range(subset_quantity):
         result.append(DataLoader(train_dataset, sampler=train_sampler[i], batch_size=args.train_batch_size))
+
+        train_dataset.select()
     return result
 
 def cal_diff(x, y, norm="org", criterion ="wd" ):
@@ -151,8 +152,9 @@ def cal_diff(x, y, norm="org", criterion ="wd" ):
     dim0 = x.shape[0]
     result = 0.0
     blur = .05
+    # notice scaling
     OT_solver = SamplesLoss("sinkhorn", p=2, blur=blur,
-                            scaling=.9, debias=False, potentials=True)
+                            scaling=.999, debias=False, potentials=True)
     for i in range(dim0):
         if criterion == "kl":
             criterion_kl = nn.KLDivLoss()
@@ -161,6 +163,7 @@ def cal_diff(x, y, norm="org", criterion ="wd" ):
             result += KLloss.item()
         else:
             # change wgan
+            # print("hi")
             F_i, G_j = OT_solver(x[i], y[i])
             # print("F_i ",torch.sum(F_i).item())
             result += (torch.sum(F_i).item())
@@ -236,14 +239,16 @@ def Difficulty_Evaluation(args, train_dataset):
 
     difficult_result = []
 
+    # notice 划分方法
     method = "line"
-    print(method)
+    criterion = "wd"
+    logger.info("划分方法 "+method +"   "+ criterion)
     for batch in tqdm(total_train_dataloader):
         phi_model.eval()
         batch = tuple(t.to(args.device) for t in batch)
         embedding, output = Phi(batch)
 
-        difficult_result.append(cal_diff(embedding, output,method))
+        difficult_result.append(cal_diff(embedding, output,method,criterion))
 
     difficult_result = np.array(difficult_result)
 
@@ -290,7 +295,6 @@ def train(args, train_dataset, model, tokenizer):
 
     # done 如何保证课程被采样了
     diff_eval_result = Difficulty_Evaluation(args, train_dataset)
-    temp_cur = []
     for i,subset in enumerate(diff_eval_result):
         gate = int((len(train_dataset)/args.train_batch_size)/(subset_quantity))
         print("第",i,"个 num:",len(subset)," 阈值 ",gate)
@@ -298,15 +302,13 @@ def train(args, train_dataset, model, tokenizer):
         # 如果subset过于小，就不采样了
         if len(subset) > gate:
             # subset = list(subset)
-            temp_cur += subset[0:int( gate /subset_quantity)]
             # 决定没一个采样的长度
-            curriculum_sets_temp.append(temp_cur)
+            curriculum_sets_temp.append(subset[0:int( gate /subset_quantity)])
         # elif(len(subset) <= int(gate/subset_quantity)):
         #     for i in range(subset_quantity):
         #         curriculum_sets_temp.append(subset)
         else:
-            temp_cur+=subset
-            curriculum_sets_temp.append(temp_cur)
+            curriculum_sets_temp.append(subset)
         # curriculum_sets_temp.append(subset)
 
     # 不采样的
@@ -668,6 +670,7 @@ def evaluate(args, model, tokenizer, prefix=""):
 
     # Compute the F1 and exact scores.
     results = squad_evaluate(examples, predictions)
+    print(args)
     return results
 
 
@@ -955,7 +958,6 @@ def main():
 
     parser.add_argument("--threads", type=int, default=1, help="multiple threads for converting example to features")
     args = parser.parse_args()
-
 
     if args.doc_stride >= args.max_seq_length - args.max_query_length:
         logger.warning(

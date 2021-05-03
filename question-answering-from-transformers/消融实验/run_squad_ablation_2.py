@@ -23,7 +23,7 @@
 
 import os
 # notice 制定GPU
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import time
 import argparse
 import glob
@@ -77,7 +77,6 @@ logger.setLevel(logging.INFO)
 MODEL_CONFIG_CLASSES = list(MODEL_FOR_QUESTION_ANSWERING_MAPPING.keys())
 MODEL_TYPES = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
 def set_seed(args):
     # 不固定随机种子，采用多样性

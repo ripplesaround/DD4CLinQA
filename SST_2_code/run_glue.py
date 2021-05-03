@@ -228,6 +228,9 @@ def main():
     # 这里默认的seed是42 ，需要我们自己重新设置seed
     set_seed(training_args.seed)
 
+    # notice 修改 ，
+    # training_args._n_gpu = 1
+
     # Get the datasets: you can either provide your own CSV/JSON training and evaluation files (see below)
     # or specify a GLUE benchmark task (the dataset will be downloaded automatically from the datasets Hub).
     #
@@ -436,6 +439,8 @@ def main():
         data_collator = DataCollatorWithPadding(tokenizer, pad_to_multiple_of=8)
     else:
         data_collator = None
+
+
 
     # Initialize our Trainer
     trainer = Trainer(

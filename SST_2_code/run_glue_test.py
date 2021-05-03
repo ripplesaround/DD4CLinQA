@@ -17,6 +17,10 @@
 # You can also adapt this script on your own text classification task. Pointers for this are left as comments.
 import copy
 import os
+
+from SST_2_code.Trainer_CL import Trainer_CL
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 # notice 制定GPU
 import time
 
@@ -24,7 +28,6 @@ import torch
 from geomloss import SamplesLoss
 from torch.utils.data import DataLoader
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 import logging
 import random
 import sys
@@ -265,8 +268,8 @@ def cal_diff(x, y, norm="org", criterion ="wd" ):
     dim0 = x.shape[0]
     result = 0.0
     blur = .05
-    OT_solver = SamplesLoss("sinkhorn", p=2, blur=blur,
-                            scaling=.9, debias=False, potentials=True)
+    # OT_solver = SamplesLoss("sinkhorn", p=2, blur=blur,
+    #                         scaling=.9, debias=False, potentials=True)
     for i in range(dim0):
         if criterion == "kl":
             criterion_kl = nn.KLDivLoss()
@@ -275,9 +278,10 @@ def cal_diff(x, y, norm="org", criterion ="wd" ):
             result += KLloss.item()
         else:
             # change wgan
-            F_i, G_j = OT_solver(x[i], y[i])
-            # print("F_i ",torch.sum(F_i).item())
-            result += (torch.sum(F_i).item())
+            # F_i, G_j = OT_solver(x[i], y[i])
+            # # print("F_i ",torch.sum(F_i).item())
+            # result += (torch.sum(F_i).item())
+            print("hi")
     return result / dim0
 
 def linear_normalization(x):
@@ -286,28 +290,73 @@ def linear_normalization(x):
     x = (x-temp_min)/(temp_max-temp_min)
     return x
 
-def DE(trainer,train_dataset,training_args):
+def DE(trainer,train_dataset,training_args,data_args):
     logger.info("***难度评估开始***")
-    train_dataloader = trainer.get_train_dataloader()
-    for step, inputs in enumerate(train_dataloader):
-        print("参数")
-        print(inputs)
+    total_train_dataloader = trainer.get_train_dataloader()
+    for i,item in enumerate(total_train_dataloader):
+        print(item)
+        if i>0:
+            break
+    print("--------")
+    for i,item in enumerate(total_train_dataloader.sampler):
+        print(item)
+        if i>0:
+            break
+
+    difficult_result = []
+    # notice 划分方法
+    method = "line"
+    criterion = "kl"
+    logger.info("划分方法 " + method + "   " + criterion)
+    for inputs in tqdm(total_train_dataloader):
         # inputs = inputs.to(training_args.device)
+        # print(inputs)
+        # print(inputs["idx"].tolist())
+        idx = inputs.pop("idx")
+        # sentences = inputs.pop("sentence")
         for key in inputs:
             inputs[key] = inputs[key].to(training_args.device)
-        print(inputs["attention_mask"].device)
-        print(next(trainer.model.parameters()).device)
         output = trainer.compute_loss(
             model=trainer.model,
             inputs=inputs,
             return_outputs=True
         )
-        print(inputs)
-        print(output)
-        print(cal_diff(inputs, output))
-        break
+        # output 的第一项是loss 第二项是SequenceClassifierOutput
+        # SequenceClassifierOutput 是 这个（https://huggingface.co/transformers/model_doc/bert.html）
+        # if return_dict=True is passed or when config.return_dict=True) or a tuple of torch.FloatTensor comprising various elements depending on the configuration (BertConfig) and inputs.
+        # 默认返回的是一个tuple 分别是：loss，logit，hidden-states, attentions
+        # hidden state的第一项是embedding的输出，后面是每一层的输出
+        # hidden_states (tuple(torch.FloatTensor), optional, returned when output_hidden_states=True is passed or when config.output_hidden_states=True) – Tuple of torch.FloatTensor (one for the output of the embeddings + one for the output of each layer) of shape (batch_size, sequence_length, hidden_size).
+        # 所以这里选用 output[1][2][0] 来访问hidden-state
+        difficult_result.append( cal_diff(output[1][2][0],output[1][2][-1],norm = method,criterion=criterion))
+    difficult_result = np.array(difficult_result)
+
+    difficult_result_max = max(difficult_result)
+    difficult_result_min = min(difficult_result)
+    gap = difficult_result_max - difficult_result_min
+
+    subset = []
+    for i in range(data_args.div_subset):
+        subset.append([])
+    for i, batch in enumerate(total_train_dataloader):
+        if difficult_result[i] == difficult_result_max:
+            subset[-1] += batch["idx"].tolist()
+            continue
+        level = int(data_args.div_subset * (difficult_result[i] - difficult_result_min) / gap)
+        subset[level] += batch["idx"].tolist()
+    # 不能直接用squad中的方法，因为这里需要返回的不是一个dataloader的合集，而是一个dataset的合集
+    # 所以必须要用 idx
+
+    for i in range(data_args.div_subset):
+        # print("ziji")
+        print(len(subset[i]))
+        subset[i] = train_dataset.select(subset[i])
 
     logger.info("***难度评估结束***")
+
+    # notice 释放缓存
+    torch.cuda.empty_cache()
+    return subset
 
 def main():
     # See all possible arguments in src/transformers/training_args.py
@@ -539,9 +588,9 @@ def main():
             test_dataset = test_dataset.select(range(data_args.max_test_samples))
 
     # Log a few random samples from the training set:
-    if training_args.do_train:
-        for index in random.sample(range(len(train_dataset)), 3):
-            logger.info(f"Sample {index} of the training set: {train_dataset[index]}.")
+    # if training_args.do_train:
+    #     for index in random.sample(range(len(train_dataset)), 3):
+    #         logger.info(f"Sample {index} of the training set: {train_dataset[index]}.")
 
     # Get the metric function
     if data_args.task_name is not None:
@@ -573,13 +622,12 @@ def main():
         data_collator = None
 
 
-    # 进行随机处理
-    curr = DE_random(data_args,training_args, train_dataset)
+
 
     total_num_train_epochs = training_args.num_train_epochs
+    # training_args._n_gpu = 1
 
-
-    # Initialize our Trainer
+    # notice Initialize our Trainer
     trainer = Trainer(
         model=model,
         args=training_args,
@@ -590,7 +638,8 @@ def main():
         data_collator=data_collator,
     )
 
-    trainer_DE = Trainer(
+    # 用于难度划分的trainer
+    trainer_DE = Trainer_CL(
         model=model,
         args=training_args,
         train_dataset=train_dataset if training_args.do_train else None,
@@ -600,29 +649,35 @@ def main():
         data_collator=data_collator,
     )
 
-    # training_args_curr = training_args
-    training_args_curr = copy.deepcopy(training_args)
-    training_args_curr.num_train_epochs = 1
-    trainer_curr = []
-    for i in range(data_args.div_subset):
-        trainer_curr.append(
-            Trainer(
-            model=model,
-            args=training_args_curr,
-            train_dataset=curr[i] if training_args.do_train else None,
-            eval_dataset=eval_dataset if training_args.do_eval else None,
-            compute_metrics=compute_metrics,
-            tokenizer=tokenizer,
-            data_collator=data_collator,
-            )
-        )
 
-    # notice
-    # 测试DE
-    DE(trainer_DE,train_dataset,training_args)
+
 
     # Training
     if training_args.do_train:
+        # notice
+        # 测试DE
+        curr_subset = DE(trainer_DE, train_dataset, training_args, data_args)
+
+        # 进行随机处理
+        # curr_subset = DE_random(data_args, training_args, train_dataset)
+
+        # training_args_curr = training_args
+        training_args_curr = copy.deepcopy(training_args)
+        training_args_curr.num_train_epochs = 1
+        trainer_curr = []
+        for i in range(data_args.div_subset):
+            trainer_curr.append(
+                Trainer(
+                    model=model,
+                    args=training_args_curr,
+                    train_dataset=curr_subset[i] if training_args.do_train else None,
+                    eval_dataset=eval_dataset if training_args.do_eval else None,
+                    compute_metrics=compute_metrics,
+                    tokenizer=tokenizer,
+                    data_collator=data_collator,
+                )
+            )
+
         checkpoint = None
         if last_checkpoint is not None:
             checkpoint = last_checkpoint
@@ -660,6 +715,7 @@ def main():
         trainer.state.global_step = 0
         trainer.save_state()
 
+        torch.cuda.empty_cache()
 
         for i in range(data_args.div_subset):
             logger.info("******* 开始课程训练 *******")
@@ -678,9 +734,11 @@ def main():
 
         trainer_curr[data_args.div_subset - 1].log_metrics("train", metrics)
         trainer_curr[data_args.div_subset - 1].save_metrics("train", metrics)
+        trainer_curr[data_args.div_subset - 1].save_state()
+        # for i in range(data_args.div_subset):
 
-        for i in range(data_args.div_subset):
-            trainer_curr[i].save_state()
+        torch.cuda.empty_cache()
+
 
     # Evaluation
     if training_args.do_eval:
