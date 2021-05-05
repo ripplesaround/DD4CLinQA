@@ -23,7 +23,7 @@
 
 import os
 # notice 制定GPU
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import time
 import argparse
 import glob
@@ -152,14 +152,14 @@ def cal_diff(x, y, norm="org", criterion ="wd" ):
     dim0 = x.shape[0]
     result = 0.0
     blur = .05
-    # notice scaling
     OT_solver = SamplesLoss("sinkhorn", p=2, blur=blur,
-                            scaling=.999, debias=False, potentials=True)
+                            scaling=.9, debias=False, potentials=True)
     for i in range(dim0):
         if criterion == "kl":
             criterion_kl = nn.KLDivLoss()
             # notice 考虑了KL的不对称性
-            KLloss = (criterion_kl(x[i], y[i])+criterion_kl(y[i], x[i]))/2
+            # KLloss = (criterion_kl(x[i], y[i])+criterion_kl(y[i], x[i]))/2
+            KLloss = (criterion_kl(x[i], y[i]))
             result += KLloss.item()
         else:
             # change wgan
@@ -464,13 +464,8 @@ def train(args, train_dataset, model, tokenizer):
             loss = outputs[0]
 
             # # notice 添加KL的loss 或者 wgan的那个w
-            # pa = 0.0001
-            # for i in range(args.train_batch_size):
-            #     loss += ((pa)*
-            #              ((cal_diff(x=outputs.hidden_states[0], y=outputs.hidden_states[-1], norm="line",criterion="kl")+
-            #               cal_diff(x=outputs.hidden_states[-1], y=outputs.hidden_states[0], norm="line", criterion="kl")
-            #               )/2)
-            #              )
+            pa = 0.0001
+            loss += (pa * (cal_diff(outputs.hidden_states[0], outputs.hidden_states[-1],norm="line",criterion="wd")))
 
             if args.n_gpu > 1:
                 loss = loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training

@@ -18,7 +18,7 @@
 
 import os
 # notice 制定GPU
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import logging
 import random
 import sys

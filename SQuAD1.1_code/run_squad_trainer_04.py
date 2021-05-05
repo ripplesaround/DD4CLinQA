@@ -23,7 +23,7 @@
 
 import os
 # notice 制定GPU
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 import time
 import argparse
 import glob
@@ -156,10 +156,12 @@ def cal_diff(x, y, norm="org", criterion ="wd" ):
         if criterion == "kl":
             criterion_kl = nn.KLDivLoss()
             # notice 考虑了KL的不对称性
-            KLloss = (criterion_kl(x[i], y[i])+criterion_kl(y[i], x[i]))/2
+            # KLloss = (criterion_kl(x[i], y[i])+criterion_kl(y[i], x[i]))/2
+            KLloss = (criterion_kl(x[i], y[i]))
             result += KLloss.item()
         else:
             # change wgan
+            # print("hi")
             F_i, G_j = OT_solver(x[i], y[i])
             # print("F_i ",torch.sum(F_i).item())
             result += (torch.sum(F_i).item())
@@ -234,17 +236,17 @@ def Difficulty_Evaluation(args, train_dataset):
         return outputs.hidden_states[0].to(args.device), outputs.hidden_states[-1].to(args.device)  # 48 384
 
     difficult_result = []
+
     # notice 划分方法
-    method = "line"
+    method = "org"
     criterion = "wd"
-    logger.info("划分方法 " + method + "   " + criterion)
-    # print(method)
+    logger.info("划分方法 "+method +"   "+ criterion)
     for batch in tqdm(total_train_dataloader):
         phi_model.eval()
         batch = tuple(t.to(args.device) for t in batch)
         embedding, output = Phi(batch)
 
-        difficult_result.append(cal_diff(embedding, output,norm=method,criterion=criterion))
+        difficult_result.append(cal_diff(embedding, output,method,criterion))
 
     difficult_result = np.array(difficult_result)
 
@@ -291,7 +293,6 @@ def train(args, train_dataset, model, tokenizer):
 
     # done 如何保证课程被采样了
     diff_eval_result = Difficulty_Evaluation(args, train_dataset)
-    temp_cur = []
     for i,subset in enumerate(diff_eval_result):
         gate = int((len(train_dataset)/args.train_batch_size)/(subset_quantity))
         print("第",i,"个 num:",len(subset)," 阈值 ",gate)
@@ -299,15 +300,13 @@ def train(args, train_dataset, model, tokenizer):
         # 如果subset过于小，就不采样了
         if len(subset) > gate:
             # subset = list(subset)
-            temp_cur += subset[0:int( gate /subset_quantity)]
             # 决定没一个采样的长度
-            curriculum_sets_temp.append(temp_cur)
+            curriculum_sets_temp.append(subset[0:int( gate /subset_quantity)])
         # elif(len(subset) <= int(gate/subset_quantity)):
         #     for i in range(subset_quantity):
         #         curriculum_sets_temp.append(subset)
         else:
-            temp_cur+=subset
-            curriculum_sets_temp.append(temp_cur)
+            curriculum_sets_temp.append(subset)
         # curriculum_sets_temp.append(subset)
 
     # 不采样的
@@ -462,14 +461,9 @@ def train(args, train_dataset, model, tokenizer):
             # model outputs are always tuple in transformers (see doc)
             loss = outputs[0]
 
-            # # notice 添加KL的loss 或者 wgan的那个w
-            # pa = 0.0001
-            # for i in range(args.train_batch_size):
-            #     loss += ((pa)*
-            #              ((cal_diff(x=outputs.hidden_states[0], y=outputs.hidden_states[-1], norm="line",criterion="kl")+
-            #               cal_diff(x=outputs.hidden_states[-1], y=outputs.hidden_states[0], norm="line", criterion="kl")
-            #               )/2)
-            #              )
+            # notice 添加KL的loss 或者 wgan的那个w
+            pa = 1
+            loss += (pa * (cal_diff(outputs.hidden_states[0], outputs.hidden_states[-1],norm="line",criterion="wd")))
 
             if args.n_gpu > 1:
                 loss = loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
@@ -669,6 +663,7 @@ def evaluate(args, model, tokenizer, prefix=""):
 
     # Compute the F1 and exact scores.
     results = squad_evaluate(examples, predictions)
+    print(args)
     return results
 
 
@@ -956,7 +951,6 @@ def main():
 
     parser.add_argument("--threads", type=int, default=1, help="multiple threads for converting example to features")
     args = parser.parse_args()
-
 
     if args.doc_stride >= args.max_seq_length - args.max_query_length:
         logger.warning(

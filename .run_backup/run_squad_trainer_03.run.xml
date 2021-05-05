@@ -1,14 +1,14 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="run_squad" type="PythonConfigurationType" factoryName="Python" singleton="false" nameIsGenerated="true">
+  <configuration default="false" name="run_squad_trainer_03" type="PythonConfigurationType" factoryName="Python" singleton="false">
     <module name="dd_2020" />
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="PARENT_ENVS" value="true" />
     <envs>
       <env name="PYTHONUNBUFFERED" value="1" />
     </envs>
-    <option name="SDK_HOME" value="sftp://fwx@10.1.114.125:22/home/fwx/anaconda3/envs/py37/bin/python3.7" />
+    <option name="SDK_HOME" value="" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/question-answering-from-transformers" />
-    <option name="IS_MODULE_SDK" value="false" />
+    <option name="IS_MODULE_SDK" value="true" />
     <option name="ADD_CONTENT_ROOTS" value="true" />
     <option name="ADD_SOURCE_ROOTS" value="true" />
     <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
@@ -19,8 +19,8 @@
         </list>
       </option>
     </PathMappingSettings>
-    <option name="SCRIPT_NAME" value="$PROJECT_DIR$/question-answering-from-transformers/run_squad.py" />
-    <option name="PARAMETERS" value="--model_type bert --model_name_or_path /home/fwx/model_pytorch/bert_base_uncased/ --do_train --do_eval --do_lower_case --version_2_with_negative --train_file /home/fwx/project/dd_2020/SQUAD_DATASET/squad2.0/train-v2.0.json --predict_file /home/fwx/project/dd_2020/SQUAD_DATASET/squad2.0/dev-v2.0.json --per_gpu_train_batch_size 12 --learning_rate 3e-5 --num_train_epochs 4 --max_seq_length 384 --doc_stride 128 --save_steps 4000 --output_dir /home/fwx/tmp/squad_exp_final_6/ --overwrite_output_dir --cuda_num 3 --diff_model_name_or_path /home/fwx/tmp/squad_baseline_2/ --div_subset 10" />
+    <option name="SCRIPT_NAME" value="$PROJECT_DIR$/question-answering-from-transformers/run_squad_trainer_03.py" />
+    <option name="PARAMETERS" value="--model_type bert --model_name_or_path /home/fwx/model_pytorch/bert_base_uncased/ --do_train --do_eval --do_lower_case --version_2_with_negative --train_file /home/fwx/project/dd_2020/SQUAD_DATASET/squad2.0/train-v2.0.json --predict_file /home/fwx/project/dd_2020/SQUAD_DATASET/squad2.0/dev-v2.0.json --per_gpu_train_batch_size 12 --learning_rate 3e-5 --num_train_epochs 4 --max_seq_length 384 --doc_stride 128 --save_steps 4000 --output_dir /home/fwx/tmp/squad_exp_final_23/ --overwrite_output_dir --cuda_num 3 --diff_model_name_or_path /home/fwx/tmp/squad_baseline_2/ --div_subset 3" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />
     <option name="MODULE_MODE" value="false" />

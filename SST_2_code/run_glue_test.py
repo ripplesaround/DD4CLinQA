@@ -20,7 +20,7 @@ import os
 
 from SST_2_code.Trainer_CL import Trainer_CL
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 # notice 制定GPU
 import time
 
@@ -169,6 +169,9 @@ class ModelArguments:
 
     model_name_or_path: str = field(
         metadata={"help": "Path to pretrained model or model identifier from huggingface.co/models"}
+    )
+    DE_model: str = field(
+        metadata={"help": "用于难度划分的模型"}
     )
     config_name: Optional[str] = field(
         default=None, metadata={"help": "Pretrained config name or path if not the same as model_name"}
@@ -626,6 +629,7 @@ def main():
 
     total_num_train_epochs = training_args.num_train_epochs
     # training_args._n_gpu = 1
+    # training_args.per_device_eval_batch_size = 1
 
     # notice Initialize our Trainer
     trainer = Trainer(
@@ -639,8 +643,17 @@ def main():
     )
 
     # 用于难度划分的trainer
+    DE_model = AutoModelForSequenceClassification.from_pretrained(
+        model_args.DE_model,
+        from_tf=bool(".ckpt" in model_args.model_name_or_path),
+        config=config,
+        cache_dir=model_args.cache_dir,
+        revision=model_args.model_revision,
+        use_auth_token=True if model_args.use_auth_token else None,
+    )
+
     trainer_DE = Trainer_CL(
-        model=model,
+        model=DE_model,
         args=training_args,
         train_dataset=train_dataset if training_args.do_train else None,
         eval_dataset=eval_dataset if training_args.do_eval else None,
@@ -649,34 +662,34 @@ def main():
         data_collator=data_collator,
     )
 
+    # notice
+    # 测试DE
+    curr_subset = DE(trainer_DE, train_dataset, training_args, data_args)
 
+    # 进行随机处理
+    # curr_subset = DE_random(data_args, training_args, train_dataset)
 
+    # training_args_curr = training_args
+    training_args_curr = copy.deepcopy(training_args)
+    training_args_curr.num_train_epochs = 1
+    # training_args_curr.per_device_eval_batch_size
+    trainer_curr = []
+    for i in range(data_args.div_subset):
+        trainer_curr.append(
+            Trainer(
+                model=model,
+                args=training_args_curr,
+                train_dataset=curr_subset[i] if training_args.do_train else None,
+                eval_dataset=eval_dataset if training_args.do_eval else None,
+                compute_metrics=compute_metrics,
+                tokenizer=tokenizer,
+                data_collator=data_collator,
+            )
+        )
 
     # Training
     if training_args.do_train:
-        # notice
-        # 测试DE
-        curr_subset = DE(trainer_DE, train_dataset, training_args, data_args)
 
-        # 进行随机处理
-        # curr_subset = DE_random(data_args, training_args, train_dataset)
-
-        # training_args_curr = training_args
-        training_args_curr = copy.deepcopy(training_args)
-        training_args_curr.num_train_epochs = 1
-        trainer_curr = []
-        for i in range(data_args.div_subset):
-            trainer_curr.append(
-                Trainer(
-                    model=model,
-                    args=training_args_curr,
-                    train_dataset=curr_subset[i] if training_args.do_train else None,
-                    eval_dataset=eval_dataset if training_args.do_eval else None,
-                    compute_metrics=compute_metrics,
-                    tokenizer=tokenizer,
-                    data_collator=data_collator,
-                )
-            )
 
         checkpoint = None
         if last_checkpoint is not None:
