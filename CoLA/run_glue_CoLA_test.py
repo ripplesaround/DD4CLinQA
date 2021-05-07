@@ -15,9 +15,9 @@
 # limitations under the License.
 """ Finetuning the library models for sequence classification on GLUE."""
 # You can also adapt this script on your own text classification task. Pointers for this are left as comments.
-import copy
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+import copy
 from Trianer_CL.Trainer_CL import Trainer_CL
 
 # notice 制定GPU
@@ -359,10 +359,19 @@ def DE(trainer,train_dataset,training_args,data_args):
     #     print(subset[i])
 
     # notice 进行采样
+    # 模拟退火
+    # dd = []
+    # for i in range(data_args.div_subset):
+    #     sample_num = (len(subset[i])) // data_args.div_subset
+    #     dd += random.sample(subset[i],sample_num)
+    #     subset[i] = train_dataset.select(dd)
+    #     print(len(subset[i]))
+
+    # 顺序
     dd = []
     for i in range(data_args.div_subset):
         sample_num = (len(subset[i])) // data_args.div_subset
-        dd += random.sample(subset[i],sample_num)
+        dd += random.sample(subset[i], sample_num)
         subset[i] = train_dataset.select(dd)
         print(len(subset[i]))
 

@@ -15,13 +15,12 @@
 # limitations under the License.
 """ Finetuning the library models for sequence classification on GLUE."""
 # You can also adapt this script on your own text classification task. Pointers for this are left as comments.
-import copy
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+import copy
 from Trianer_CL.Trainer_CL import Trainer_CL
 
 # notice 制定GPU
-import time
 
 import logging
 import random
@@ -359,12 +358,21 @@ def DE(trainer,train_dataset,training_args,data_args):
     #     print(subset[i])
 
     # notice 进行采样
+    # 模拟退火
     dd = []
     for i in range(data_args.div_subset):
         sample_num = (len(subset[i])) // data_args.div_subset
         dd += random.sample(subset[i],sample_num)
         subset[i] = train_dataset.select(dd)
         print(len(subset[i]))
+
+    # 顺序
+    # dd = []
+    # for i in range(data_args.div_subset):
+    #     sample_num = (len(subset[i])) // data_args.div_subset
+    #     dd += random.sample(subset[i], sample_num)
+    #     subset[i] = train_dataset.select(dd)
+    #     print(len(subset[i]))
 
     logger.info("***难度评估结束***")
 
@@ -422,8 +430,8 @@ def main():
 
     # Set seed before initializing model.
     # notice 这里默认的seed是42 ，需要我们自己重新设置seed
-    # set_seed(training_args.seed)
-    set_seed(int(time.time()))
+    set_seed(training_args.seed)
+    # set_seed(int(time.time()))
 
     # Get the datasets: you can either provide your own CSV/JSON training and evaluation files (see below)
     # or specify a GLUE benchmark task (the dataset will be downloaded automatically from the datasets Hub).
@@ -775,9 +783,12 @@ def main():
             eval_datasets.append(datasets["validation_mismatched"])
 
         for eval_dataset, task in zip(eval_datasets, tasks):
+            torch.cuda.empty_cache()
+
             metrics = trainer_curr[data_args.div_subset - 1].evaluate(eval_dataset=eval_dataset)
 
             max_val_samples = data_args.max_val_samples if data_args.max_val_samples is not None else len(eval_dataset)
+            torch.cuda.empty_cache()
             metrics["eval_samples"] = min(max_val_samples, len(eval_dataset))
 
             trainer_curr[data_args.div_subset - 1].log_metrics("eval", metrics)

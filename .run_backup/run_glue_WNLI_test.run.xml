@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="run_glue_org" type="PythonConfigurationType" factoryName="Python">
+  <configuration default="false" name="run_glue_WNLI_test" type="PythonConfigurationType" factoryName="Python" singleton="false">
     <module name="dd_2020" />
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="PARENT_ENVS" value="true" />
@@ -7,13 +7,13 @@
       <env name="PYTHONUNBUFFERED" value="1" />
     </envs>
     <option name="SDK_HOME" value="" />
-    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/SST_2_code" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/WNLI" />
     <option name="IS_MODULE_SDK" value="true" />
     <option name="ADD_CONTENT_ROOTS" value="true" />
     <option name="ADD_SOURCE_ROOTS" value="true" />
     <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-    <option name="SCRIPT_NAME" value="$PROJECT_DIR$/SST_2_code/run_glue_org.py" />
-    <option name="PARAMETERS" value="--model_name_or_path bert-base-cased --task_name SST2 --do_train --do_eval --max_seq_length 128 --per_device_train_batch_size 32 --learning_rate 3e-5 --num_train_epochs 3 --output_dir /home/fwx/tmp/sst2/baseline_base --overwrite_output_dir" />
+    <option name="SCRIPT_NAME" value="$PROJECT_DIR$/WNLI/run_glue_WNLI_test.py" />
+    <option name="PARAMETERS" value="--model_name_or_path bert-base-cased --task_name wnli --do_train --do_eval --max_seq_length 128 --per_device_train_batch_size 32 --learning_rate 2e-5 --num_train_epochs 3 --output_dir /home/fwx/tmp/wnli/exp_final_02/ --overwrite_output_dir --DE_model /home/fwx/tmp/wnli/baseline_base/" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />
     <option name="MODULE_MODE" value="false" />

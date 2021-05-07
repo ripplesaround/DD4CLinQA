@@ -16,7 +16,7 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader, SequentialSampler
 from torch.utils.data.distributed import DistributedSampler
 from transformers import trainer, is_datasets_available
-
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
 
 # torch.distributed.init_process_group(backend="nccl")
 
@@ -42,8 +42,6 @@ class Trainer_CL(trainer.Trainer):
         train_sampler = self._get_train_sampler()
         # 在这里添加一个id序列，让他经过相同的sample操作，得到变换后的id序列
         # self.train_dataset.__len__()
-
-
         result = DataLoader(
             self.train_dataset,
             batch_size=self.args.train_batch_size,
@@ -55,6 +53,4 @@ class Trainer_CL(trainer.Trainer):
             pin_memory=self.args.dataloader_pin_memory,
             # generator=g,
         )
-
-
         return result

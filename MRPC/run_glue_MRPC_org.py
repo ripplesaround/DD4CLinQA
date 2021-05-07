@@ -15,14 +15,10 @@
 # limitations under the License.
 """ Finetuning the library models for sequence classification on GLUE."""
 # You can also adapt this script on your own text classification task. Pointers for this are left as comments.
-import copy
+
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
-from Trianer_CL.Trainer_CL import Trainer_CL
-
 # notice 制定GPU
-import time
-
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 import logging
 import random
 import sys
@@ -31,11 +27,6 @@ from typing import Optional
 
 import numpy as np
 from datasets import load_dataset, load_metric
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from tqdm import tqdm
-from geomloss import SamplesLoss
 
 import transformers
 from transformers import (
@@ -54,6 +45,7 @@ from transformers import (
 # from transformers.trainer_utils import  is_main_process
 from transformers.trainer_utils import get_last_checkpoint, is_main_process
 # from transformers.utils import check_min_version
+
 
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
 # check_min_version("4.6.0.dev0")
@@ -81,11 +73,6 @@ class DataTrainingArguments:
     into argparse arguments to be able to specify them on
     the command line.
     """
-    # notice 添加的参数
-    div_subset: Optional[int] = field(
-        default=3,
-        metadata={"help": "划分成几个subset"},
-    )
 
     task_name: Optional[str] = field(
         default=None,
@@ -162,9 +149,6 @@ class ModelArguments:
     model_name_or_path: str = field(
         metadata={"help": "Path to pretrained model or model identifier from huggingface.co/models"}
     )
-    DE_model: str = field(
-        metadata={"help": "用于难度划分的模型"}
-    )
     config_name: Optional[str] = field(
         default=None, metadata={"help": "Pretrained config name or path if not the same as model_name"}
     )
@@ -191,186 +175,6 @@ class ModelArguments:
         },
     )
 
-def DE_random(data_args,training_args, train_dataset):
-    logger.info("***随机划分***")
-    # subset_quantity = data_args.div_subset
-    # n_train = len(train_dataset)
-    # split = n_train // subset_quantity
-    # indices = list(range(n_train))
-    # random.shuffle(indices)
-    # train_sampler = []
-    # # 1,12,123
-    # temp = []
-    # for i in range(subset_quantity - 1):
-    #     temp = []
-    #     for j in range(i + 1):
-    #         temp += indices[j * split: j * split + int(1 / 3 * split)]
-    #     train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(temp))
-    # train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(
-    #     temp + indices[(subset_quantity - 1) * split: (subset_quantity - 1) * split + int(1 / 3 * split)])
-    # )
-    #
-    # # 1 2 3
-    # # for i in range(subset_quantity):
-    # #     train_sampler.append(indices[i * split: i * split + int(1 / 3 * split)])
-    #
-    # result = []
-    # for i in range(subset_quantity):
-    #     result.append(DataLoader(train_dataset, sampler=train_sampler[i], batch_size=training_args.per_device_train_batch_size))
-
-    subset_quantity = data_args.div_subset
-    n_train = len(train_dataset)
-    split = n_train // subset_quantity
-    indices = list(range(n_train))
-    random.shuffle(indices)
-    result = []
-    for i in range(data_args.div_subset):
-        result.append(train_dataset.select(indices[i * split: i * split + int(1 / 3 * split)]))
-        logger.info("第 %s 个subset的长度： %s",i,len((result[i])))
-
-    # data_len = int(len(train_dataset) / data_args.div_subset)
-    # result = random_split(train_dataset, [data_len,data_len, (len(train_dataset)-2*data_len) ], generator=torch.Generator().manual_seed(training_args.seed))
-    # result[2] =  result[2].select(range(data_len))
-
-    logger.info("***随机划分完成***")
-    return result
-
-def cal_diff(x, y, norm="org", criterion ="wd" ):
-    if norm == "softmax":
-        x = F.softmax(x)
-        y = F.softmax(y)
-    elif norm == "logsoftmax":
-        x = F.log_softmax(x)
-        y = F.log_softmax(y)
-    elif norm == "line":
-        # logger.info("使用线性归一化")
-        x = linear_normalization(x)
-        y = linear_normalization(y)
-    elif norm == "Gaussian":
-        z = 1
-        # 实现高斯分布
-        # transform_BZ = transforms.Normalize(
-        #     mean=[0.5, 0.5, 0.5],  # 取决于数据集
-        #     std=[0.5, 0.5, 0.5]
-        # )
-        # logger.info("使用高斯分布归一化")
-
-    # 每个batch一起算
-    # KLloss = criterion(x, y)
-    # return KLloss.item()
-
-    # 每个batch 内单独算，最后算一个和
-    dim0 = x.shape[0]
-    result = 0.0
-    blur = .05
-    OT_solver = SamplesLoss("sinkhorn", p=2, blur=blur,
-                            scaling=.9, debias=False, potentials=True)
-    for i in range(dim0):
-        if criterion == "kl":
-            criterion_kl = nn.KLDivLoss()
-            # notice 考虑了KL的不对称性
-            KLloss = (criterion_kl(x[i], y[i])+criterion_kl(y[i], x[i]))/2
-            result += KLloss.item()
-        else:
-            # change wgan
-            F_i, G_j = OT_solver(x[i], y[i])
-            # # print("F_i ",torch.sum(F_i).item())
-            result += (torch.sum(F_i).item())
-            # print("hi")
-    return result / dim0
-
-def linear_normalization(x):
-    temp_min = torch.min(x)
-    temp_max = torch.max(x)
-    x = (x-temp_min)/(temp_max-temp_min)
-    return x
-
-def DE(trainer,train_dataset,training_args,data_args):
-    logger.info("***难度评估开始***")
-    total_train_dataloader = trainer.get_train_dataloader()
-    for i,item in enumerate(total_train_dataloader):
-        print(item)
-        if i>0:
-            break
-    print("--------")
-    for i,item in enumerate(total_train_dataloader.sampler):
-        print(item)
-        if i>0:
-            break
-
-    difficult_result = []
-    # notice 划分方法
-    method = "org"
-    criterion = "wd"
-    logger.info("划分方法 " + method + "   " + criterion)
-    for inputs in tqdm(total_train_dataloader):
-        # inputs = inputs.to(training_args.device)
-        # print(inputs)
-        # print(inputs["idx"].tolist())
-        idx = inputs.pop("idx")
-        # sentences = inputs.pop("sentence")
-        for key in inputs:
-            inputs[key] = inputs[key].to(training_args.device)
-        output = trainer.compute_loss(
-            model=trainer.model,
-            inputs=inputs,
-            return_outputs=True
-        )
-        # output 的第一项是loss 第二项是SequenceClassifierOutput
-        # SequenceClassifierOutput 是 这个（https://huggingface.co/transformers/model_doc/bert.html）
-        # if return_dict=True is passed or when config.return_dict=True) or a tuple of torch.FloatTensor comprising various elements depending on the configuration (BertConfig) and inputs.
-        # 默认返回的是一个tuple 分别是：loss，logit，hidden-states, attentions
-        # hidden state的第一项是embedding的输出，后面是每一层的输出
-        # hidden_states (tuple(torch.FloatTensor), optional, returned when output_hidden_states=True is passed or when config.output_hidden_states=True) – Tuple of torch.FloatTensor (one for the output of the embeddings + one for the output of each layer) of shape (batch_size, sequence_length, hidden_size).
-        # 所以这里选用 output[1][2][0] 来访问hidden-state
-        difficult_result.append( cal_diff(output[1][2][0],output[1][2][-1],norm = method,criterion=criterion))
-
-        # if i>15:
-        #     break
-
-
-    difficult_result = np.array(difficult_result)
-    logger.info("dic len {len1}".format(len1=len(difficult_result)))
-
-    difficult_result_max = max(difficult_result)
-    difficult_result_min = min(difficult_result)
-    gap = difficult_result_max - difficult_result_min
-
-    subset = []
-    total_len = 0
-    for i in range(data_args.div_subset):
-        subset.append([])
-    for i, batch in enumerate(total_train_dataloader):
-        if difficult_result[i] == difficult_result_max:
-            subset[-1] += batch["idx"].tolist()
-            total_len += len(batch["idx"].tolist())
-            continue
-        level = int(data_args.div_subset * (difficult_result[i] - difficult_result_min) / gap)
-        subset[level] += batch["idx"].tolist()
-        total_len += len(batch["idx"].tolist())
-        # print("batch")
-        # print(batch["idx"].tolist())
-        # if i>15:
-        #     break
-    # 不能直接用squad中的方法，因为这里需要返回的不是一个dataloader的合集，而是一个dataset的合集
-    # 所以必须要用 idx
-    print("total_len {e}".format(e = total_len))
-    # for i in range(data_args.div_subset):
-    #     print(subset[i])
-
-    # notice 进行采样
-    dd = []
-    for i in range(data_args.div_subset):
-        sample_num = (len(subset[i])) // data_args.div_subset
-        dd += random.sample(subset[i],sample_num)
-        subset[i] = train_dataset.select(dd)
-        print(len(subset[i]))
-
-    logger.info("***难度评估结束***")
-
-    # notice 释放缓存
-    torch.cuda.empty_cache()
-    return subset
 
 def main():
     # See all possible arguments in src/transformers/training_args.py
@@ -421,9 +225,11 @@ def main():
     logger.info(f"Training/evaluation parameters {training_args}")
 
     # Set seed before initializing model.
-    # notice 这里默认的seed是42 ，需要我们自己重新设置seed
-    # set_seed(training_args.seed)
-    set_seed(int(time.time()))
+    # 这里默认的seed是42 ，需要我们自己重新设置seed
+    set_seed(training_args.seed)
+
+    # notice 修改 ，
+    # training_args._n_gpu = 1
 
     # Get the datasets: you can either provide your own CSV/JSON training and evaluation files (see below)
     # or specify a GLUE benchmark task (the dataset will be downloaded automatically from the datasets Hub).
@@ -501,7 +307,6 @@ def main():
         cache_dir=model_args.cache_dir,
         revision=model_args.model_revision,
         use_auth_token=True if model_args.use_auth_token else None,
-        output_hidden_states=True,
     )
     tokenizer = AutoTokenizer.from_pretrained(
         model_args.tokenizer_name if model_args.tokenizer_name else model_args.model_name_or_path,
@@ -602,9 +407,9 @@ def main():
             test_dataset = test_dataset.select(range(data_args.max_test_samples))
 
     # Log a few random samples from the training set:
-    # if training_args.do_train:
-    #     for index in random.sample(range(len(train_dataset)), 3):
-    #         logger.info(f"Sample {index} of the training set: {train_dataset[index]}.")
+    if training_args.do_train:
+        for index in random.sample(range(len(train_dataset)), 3):
+            logger.info(f"Sample {index} of the training set: {train_dataset[index]}.")
 
     # Get the metric function
     if data_args.task_name is not None:
@@ -637,12 +442,7 @@ def main():
 
 
 
-
-    total_num_train_epochs = training_args.num_train_epochs
-    # training_args._n_gpu = 1
-    # training_args.per_device_eval_batch_size = 1
-
-    # notice Initialize our Trainer
+    # Initialize our Trainer
     trainer = Trainer(
         model=model,
         args=training_args,
@@ -653,55 +453,8 @@ def main():
         data_collator=data_collator,
     )
 
-    # 用于难度划分的trainer
-    DE_model = AutoModelForSequenceClassification.from_pretrained(
-        model_args.DE_model,
-        from_tf=bool(".ckpt" in model_args.model_name_or_path),
-        config=config,
-        cache_dir=model_args.cache_dir,
-        revision=model_args.model_revision,
-        use_auth_token=True if model_args.use_auth_token else None,
-    )
-
-    trainer_DE = Trainer_CL(
-        model=DE_model,
-        args=training_args,
-        train_dataset=train_dataset if training_args.do_train else None,
-        eval_dataset=eval_dataset if training_args.do_eval else None,
-        compute_metrics=compute_metrics,
-        tokenizer=tokenizer,
-        data_collator=data_collator,
-    )
-
-    # notice
-    # 测试DE
-    curr_subset = DE(trainer_DE, train_dataset, training_args, data_args)
-
-    # 进行随机处理
-    # curr_subset = DE_random(data_args, training_args, train_dataset)
-
-    # training_args_curr = training_args
-    training_args_curr = copy.deepcopy(training_args)
-    training_args_curr.num_train_epochs = 1
-    # training_args_curr.per_device_eval_batch_size
-    trainer_curr = []
-    for i in range(data_args.div_subset):
-        trainer_curr.append(
-            Trainer(
-                model=model,
-                args=training_args_curr,
-                train_dataset=curr_subset[i] if training_args.do_train else None,
-                eval_dataset=eval_dataset if training_args.do_eval else None,
-                compute_metrics=compute_metrics,
-                tokenizer=tokenizer,
-                data_collator=data_collator,
-            )
-        )
-
     # Training
     if training_args.do_train:
-
-
         checkpoint = None
         if last_checkpoint is not None:
             checkpoint = last_checkpoint
@@ -711,62 +464,24 @@ def main():
             if AutoConfig.from_pretrained(model_args.model_name_or_path).num_labels == num_labels:
                 checkpoint = model_args.model_name_or_path
 
-        # notice 这里直接讲train打包了，需要继承train方法
-
-        # for i in range(data_args.div_subset):
-        #     logger.info("******* 开始课程训练 *******")
-        #     train_result = trainer_curr[i].train(resume_from_checkpoint=checkpoint)
-        #     checkpoint = training_args.output_dir
-        #     trainer_curr[i].save_model()
-        #     logger.info("curr   save model at " + training_args.output_dir)
-
-        # 还要修改一下epoch，搞成很多个train的方式
-        # for i in range(int(total_num_train_epochs)):
-        #     logger.info("num_train_epochs --- " + str(training_args.num_train_epochs))
-        #     train_result = trainer.train(resume_from_checkpoint=checkpoint)
-        #     checkpoint = training_args.output_dir
-        #     trainer.save_model()
-        #     logger.info("save model at "+ training_args.output_dir)
-
-        logger.info("num_train_epochs --- " + str(training_args.num_train_epochs))
-        logger.info("curr num_train_epochs --- " + str(training_args_curr.num_train_epochs))
+        # notice 这里直接讲train打包了，需要搞清楚数据集是如传进去的
         train_result = trainer.train(resume_from_checkpoint=checkpoint)
-        checkpoint = training_args.output_dir
-        trainer.save_model()
-        logger.info("save model at " + training_args.output_dir)
-        logger.info("trainer.state.global_step = %s",trainer.state.global_step)
-        # 归0
-        trainer.state.global_step = 0
-        trainer.save_state()
-
-        torch.cuda.empty_cache()
-
-        for i in range(data_args.div_subset):
-            logger.info("******* 开始课程训练 *******")
-            train_result = trainer_curr[i].train(resume_from_checkpoint=checkpoint)
-            checkpoint = training_args.output_dir
-            trainer_curr[i].save_model()
-            logger.info("curr   save model at " + training_args.output_dir)
-
         metrics = train_result.metrics
         max_train_samples = (
             data_args.max_train_samples if data_args.max_train_samples is not None else len(train_dataset)
         )
         metrics["train_samples"] = min(max_train_samples, len(train_dataset))
 
-        # trainer.save_model()  # Saves the tokenizer too for easy upload
+        trainer.save_model()  # Saves the tokenizer too for easy upload
 
-        trainer_curr[data_args.div_subset - 1].log_metrics("train", metrics)
-        trainer_curr[data_args.div_subset - 1].save_metrics("train", metrics)
-        trainer_curr[data_args.div_subset - 1].save_state()
-        # for i in range(data_args.div_subset):
-
-        torch.cuda.empty_cache()
-
+        trainer.log_metrics("train", metrics)
+        trainer.save_metrics("train", metrics)
+        trainer.save_state()
 
     # Evaluation
     if training_args.do_eval:
         logger.info("*** Evaluate ***")
+
         # Loop to handle MNLI double evaluation (matched, mis-matched)
         tasks = [data_args.task_name]
         eval_datasets = [eval_dataset]
@@ -775,13 +490,13 @@ def main():
             eval_datasets.append(datasets["validation_mismatched"])
 
         for eval_dataset, task in zip(eval_datasets, tasks):
-            metrics = trainer_curr[data_args.div_subset - 1].evaluate(eval_dataset=eval_dataset)
+            metrics = trainer.evaluate(eval_dataset=eval_dataset)
 
             max_val_samples = data_args.max_val_samples if data_args.max_val_samples is not None else len(eval_dataset)
             metrics["eval_samples"] = min(max_val_samples, len(eval_dataset))
 
-            trainer_curr[data_args.div_subset - 1].log_metrics("eval", metrics)
-            trainer_curr[data_args.div_subset - 1].save_metrics("eval", metrics)
+            trainer.log_metrics("eval", metrics)
+            trainer.save_metrics("eval", metrics)
 
     if training_args.do_predict:
         logger.info("*** Test ***")
