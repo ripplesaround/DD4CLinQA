@@ -238,7 +238,7 @@ def Difficulty_Evaluation(args, train_dataset):
     difficult_result = []
 
     # notice 划分方法
-    method = "softmax"
+    method = "logsoftmax"
     criterion = "wd"
     logger.info("划分方法 "+method +"   "+ criterion)
     for batch in tqdm(total_train_dataloader):

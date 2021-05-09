@@ -16,7 +16,7 @@
 """ Finetuning the library models for sequence classification on GLUE."""
 # You can also adapt this script on your own text classification task. Pointers for this are left as comments.
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 import copy
 from Trianer_CL.Trainer_CL import Trainer_CL
 
@@ -303,6 +303,7 @@ def DE(trainer,train_dataset,training_args,data_args):
     criterion = "wd"
     logger.info("划分方法 " + method + "   " + criterion)
     for inputs in tqdm(total_train_dataloader):
+        # cuda error 证明算法写错了
         # inputs = inputs.to(training_args.device)
         # print(inputs)
         # print(inputs["idx"].tolist())
@@ -648,7 +649,7 @@ def main():
 
     total_num_train_epochs = training_args.num_train_epochs
     # training_args._n_gpu = 1
-    # training_args.per_device_eval_batch_size = 1
+    training_args.per_device_eval_batch_size = 1
 
     # notice Initialize our Trainer
     trainer = Trainer(
@@ -683,10 +684,10 @@ def main():
 
     # notice
     # 测试DE
-    curr_subset = DE(trainer_DE, train_dataset, training_args, data_args)
+    # curr_subset = DE(trainer_DE, train_dataset, training_args, data_args)
 
     # 进行随机处理
-    # curr_subset = DE_random(data_args, training_args, train_dataset)
+    curr_subset = DE_random(data_args, training_args, train_dataset)
 
     # training_args_curr = training_args
     training_args_curr = copy.deepcopy(training_args)

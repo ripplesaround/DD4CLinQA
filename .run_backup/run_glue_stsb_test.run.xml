@@ -1,5 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="run_glue_STSB_test" type="PythonConfigurationType" factoryName="Python" singleton="false">
+    <output_file path="$PROJECT_DIR$/STS_B" is_save="true" />
+    <log_file alias="stsb_log_test" path="$PROJECT_DIR$/STS_B" skipped="false" />
     <module name="dd_2020" />
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="PARENT_ENVS" value="true" />
