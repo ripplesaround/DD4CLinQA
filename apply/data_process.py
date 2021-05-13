@@ -19,6 +19,8 @@ class dataset_info():
     def print(self):
         print("数据集中存在{changdu}个数据".format(changdu=self.dataset_num))
 
+
+
 class data_sample():
     def __init__(self,context,qas):
         self.question_answer = []
@@ -35,29 +37,36 @@ class data_sample():
             temp.append(self.qas[i]["question"])
             for j in range(len(self.qas[i]["answers"])):
                 temp.append(self.qas[i]["answers"][j]["text"])
-            # print(temp)
+            temp.append(self.qas[i]["id"])
             self.question_answer.append(temp)
     def print_qa(self):
         print(self.question_answer)
 
 def read_json(num = 0):
-    filename = 'sample_dev.json'
+    filename = 'sample_dev_ans.json'
+    pred_filename = "nbest_predictions_.json"
     f = open(filename, 'r', encoding="utf-8")
+    f_pred = open(pred_filename,"r",encoding="utf-8")
     content = f.read()
     a = json.loads(content)
     dic = a["data"][0]
     info = dataset_info(
         dataset_num=len(a["data"]),
-        filename='sample_dev.json',
-        path =os.path.abspath(filename)
+        filename='sample_dev_ans.json',
+        path=os.path.abspath(filename)
     )
     # print(type(a["data"][0]))
-    data = data_sample(context=a["data"][num]["paragraphs"][0]["context"],qas=a["data"][num]["paragraphs"][0]["qas"])
-    print("读取文件 "+filename)
+    data_ans = data_sample(context=a["data"][num]["paragraphs"][0]["context"],qas=a["data"][num]["paragraphs"][0]["qas"])
+    data_pred = f_pred.read()
+    data_pred = json.loads(data_pred)
+
+    print("读取dev文件 "+filename)
+    print("读取结果文件 "+pred_filename)
     f.close()
-    return info,data
+    return info, data_ans, data_pred
 
 
 if __name__ == "__main__":
-    info,data = read_json()
-    print(data.question_answer[1])
+    info, data_ans,data_pred = read_json()
+    # print(data_ans.question_answer[2])
+    print(type(data_pred))

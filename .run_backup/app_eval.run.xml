@@ -12,8 +12,8 @@
     <option name="ADD_CONTENT_ROOTS" value="true" />
     <option name="ADD_SOURCE_ROOTS" value="true" />
     <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-    <option name="SCRIPT_NAME" value="$PROJECT_DIR$/apply/data_process.py" />
-    <option name="PARAMETERS" value="--model_type bert --model_name_or_path ../backstage/dataset/squad2.0 --do_eval --do_lower_case --version_2_with_negative --predict_file sample_dev.json --per_gpu_train_batch_size=16 --learning_rate 3e-5 --num_train_epochs 5 --max_seq_length 384 --doc_stride 128 --save_steps 6000 --output_dir ../backstage/tmp/ --overwrite_output_dir" />
+    <option name="SCRIPT_NAME" value="$PROJECT_DIR$/apply/load_model_2.py" />
+    <option name="PARAMETERS" value="--model_type bert --model_name_or_path ../backstage/model/squad_baseline_2/ --do_eval --do_lower_case --version_2_with_negative --predict_file sample_dev_modeluse.json --per_gpu_train_batch_size=16 --per_gpu_eval_batch_size=1 --learning_rate 3e-5 --num_train_epochs 5 --max_seq_length 384 --doc_stride 128 --save_steps 6000 --output_dir ../backstage/tmp/ --overwrite_output_dir" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />
     <option name="MODULE_MODE" value="false" />

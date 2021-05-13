@@ -163,22 +163,46 @@ def sys_exit():
     sys.exit("0")
 
 def show_ans1():
-    ans1 = Message(eval_page, text=data.question_answer[0][1], font=("Times New Roman", 13), bg="AliceBlue",
-                        width=400)
-    ans1.place(x=50, y=350)
+    ans1 = Message(eval_page, text=data_ans.question_answer[0][1], font=("Times New Roman", 13), bg="AliceBlue",
+                   width=400)
+    ans1.place(x=50, y=360)
 def show_ans2():
-    ans1 = Message(eval_page, text=data.question_answer[1][1], font=("Times New Roman", 13), bg="AliceBlue",
-                        width=400)
-    ans1.place(x=50, y=450)
+    ans1 = Message(eval_page, text=data_ans.question_answer[1][1], font=("Times New Roman", 13), bg="AliceBlue",
+                   width=400)
+    ans1.place(x=50, y=460)
 def show_ans3():
-    ans1 = Message(eval_page, text=data.question_answer[2][1], font=("Times New Roman", 13), bg="AliceBlue",
-                        width=400)
-    ans1.place(x=50, y=550)
+    ans1 = Message(eval_page, text=data_ans.question_answer[2][1], font=("Times New Roman", 13), bg="AliceBlue",
+                   width=400)
+    ans1.place(x=50, y=560)
+
+def check_pred1():
+    id = data_ans.question_answer[0][-1]
+    # [0]是预测值最高的
+    res = data_pred[id][0]["text"]
+    pred1 = Message(eval_page, text=res, font=("Times New Roman", 13), bg="CornflowerBlue",
+                   width=400)
+    pred1.place(x=50, y=330)
+def check_pred2():
+    id = data_ans.question_answer[1][-1]
+    # [0]是预测值最高的
+    res = data_pred[id][0]["text"]
+    pred2 = Message(eval_page, text=res, font=("Times New Roman", 13), bg="CornflowerBlue",
+                   width=400)
+    pred2.place(x=50, y=430)
+def check_pred3():
+    id = data_ans.question_answer[2][-1]
+    # [0]是预测值最高的
+    res = data_pred[id][0]["text"]
+    pred3 = Message(eval_page, text=res, font=("Times New Roman", 13), bg="CornflowerBlue",
+                   width=400)
+    pred3.place(x=50, y=530)
+
 
 def train():
     messagebox.showinfo(title='开始训练', message='开始训练')
 
 def eval_mode():
+    # data_pred
     main_gui.withdraw()
     global eval_page
     eval_page = Tk()
@@ -187,21 +211,27 @@ def eval_mode():
     title = Label(eval_page, text="测试信息", font=("楷体", 20))
     title.place(x=240, y=10)
 
-    context = Message(eval_page, text=data.context, font=("Times New Roman", 13), bg="lightgreen", width=500)
+    context = Message(eval_page, text=data_ans.context, font=("Times New Roman", 13), bg="lightgreen", width=500)
     context.place(x=50, y=50)
 
-    question1 = Message(eval_page, text=data.question_answer[0][0], font=("Times New Roman", 13), bg="PaleVioletRed", width=400)
+    question1 = Message(eval_page, text=data_ans.question_answer[0][0], font=("Times New Roman", 13), bg="PaleVioletRed", width=400)
     question1.place(x=50,y=300)
-    question1_bt = Button(eval_page, text='回答', command=show_ans1)
-    question1_bt.place(x=470, y=300)
-    question2 = Message(eval_page, text=data.question_answer[1][0], font=("Times New Roman", 13), bg="PaleVioletRed", width=400)
+    pred1_bt = Button(eval_page, text='预测', command=check_pred1)
+    pred1_bt.place(x=470, y=300)
+    question1_bt = Button(eval_page, text='标答', command=show_ans1)
+    question1_bt.place(x=520, y=300)
+    question2 = Message(eval_page, text=data_ans.question_answer[1][0], font=("Times New Roman", 13), bg="PaleVioletRed", width=400)
     question2.place(x=50, y=400)
-    question1_bt = Button(eval_page, text='回答', command=show_ans2)
-    question1_bt.place(x=470, y=400)
-    question3 = Message(eval_page, text=data.question_answer[2][0], font=("Times New Roman", 13), bg="PaleVioletRed", width=400)
+    pred2_bt = Button(eval_page, text='预测', command=check_pred2)
+    pred2_bt.place(x=470, y=400)
+    question2_bt = Button(eval_page, text='标答', command=show_ans2)
+    question2_bt.place(x=520, y=400)
+    question3 = Message(eval_page, text=data_ans.question_answer[2][0], font=("Times New Roman", 13), bg="PaleVioletRed", width=400)
     question3.place(x=50, y=500)
-    question1_bt = Button(eval_page, text='回答', command=show_ans3)
-    question1_bt.place(x=470, y=500)
+    pred3_bt = Button(eval_page, text='预测', command=check_pred3)
+    pred3_bt.place(x=470, y=500)
+    question3_bt = Button(eval_page, text='标答', command=show_ans3)
+    question3_bt.place(x=520, y=500)
 
     exit_bt = Button(eval_page, text='退出', command=sys_exit)
     exit_bt.place(x=550, y=550)
@@ -290,8 +320,8 @@ def menu():
 
 
 if __name__ == "__main__":
-    global info,data
-    info, data = read_json()
+    global info,data_ans,data_pred
+    info, data_ans, data_pred = read_json()
     login = Tk()
     # main_gui = Tk()
 

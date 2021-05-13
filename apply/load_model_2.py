@@ -49,12 +49,12 @@ from transformers.data.metrics.squad_metrics import (
 )
 from transformers.data.processors.squad import SquadResult, SquadV1Processor, SquadV2Processor
 from transformers.trainer_utils import is_main_process
+from torch.utils.tensorboard import SummaryWriter
 
-
-try:
-    from torch.utils.tensorboard import SummaryWriter
-except ImportError:
-    from tensorboardX import SummaryWriter
+# try:
+#     from torch.utils.tensorboard import SummaryWriter
+# except ImportError:
+#     from tensorboardX import SummaryWriter
 
 
 logger = logging.getLogger(__name__)

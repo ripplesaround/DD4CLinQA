@@ -1,0 +1,2112 @@
+{
+    "56ddde6b9a695914005b9628": [
+        {
+            "text": "France",
+            "probability": 0.9896186416029672,
+            "start_logit": 6.95012092590332,
+            "end_logit": 7.427539825439453
+        },
+        {
+            "text": "Normandy, a region in France",
+            "probability": 0.0038294938937811006,
+            "start_logit": 1.3955339193344116,
+            "end_logit": 7.427539825439453
+        },
+        {
+            "text": "in France",
+            "probability": 0.003768655529219356,
+            "start_logit": 1.3795195817947388,
+            "end_logit": 7.427539825439453
+        },
+        {
+            "text": "France.",
+            "probability": 0.0017502846569846689,
+            "start_logit": 6.95012092590332,
+            "end_logit": 1.0899986028671265
+        },
+        {
+            "text": "a region in France",
+            "probability": 0.00047547150122321673,
+            "start_logit": -0.6906470656394958,
+            "end_logit": 7.427539825439453
+        },
+        {
+            "text": "France. They were descended from Norse (\"Norman\" comes from \"Norseman\") raiders and pirates from Denmark, Iceland and Norway",
+            "probability": 0.00023069945522366915,
+            "start_logit": 6.95012092590332,
+            "end_logit": -0.9364193081855774
+        },
+        {
+            "text": "region in France",
+            "probability": 0.00011684536458577269,
+            "start_logit": -2.094102621078491,
+            "end_logit": 7.427539825439453
+        },
+        {
+            "text": "France. They were descended from Norse (\"Norman\" comes from \"Norseman\") raiders and pirates from Denmark",
+            "probability": 0.00011240896086273885,
+            "start_logit": 6.95012092590332,
+            "end_logit": -1.6553914546966553
+        },
+        {
+            "text": "France. They were descended from Norse (\"Norman\" comes from \"Norseman\") raiders and pirates from Denmark, Iceland",
+            "probability": 2.650237424360713e-05,
+            "start_logit": 6.95012092590332,
+            "end_logit": -3.1003007888793945
+        },
+        {
+            "text": "France. They were descended from Norse",
+            "probability": 1.565350725083801e-05,
+            "start_logit": 6.95012092590332,
+            "end_logit": -3.626840114593506
+        },
+        {
+            "text": "France. They were descended from Norse (\"Norman\" comes from \"Norseman\")",
+            "probability": 1.2633685617619167e-05,
+            "start_logit": 6.95012092590332,
+            "end_logit": -3.8411684036254883
+        },
+        {
+            "text": "French: Normands; Latin: Normanni) were the people who in the 10th and 11th centuries gave their name to Normandy, a region in France",
+            "probability": 1.2316089107121811e-05,
+            "start_logit": -4.344047546386719,
+            "end_logit": 7.427539825439453
+        },
+        {
+            "text": "France. They were descended from Norse (\"Norman\" comes from \"Norseman\") raiders and pirates",
+            "probability": 8.058972273748875e-06,
+            "start_logit": 6.95012092590332,
+            "end_logit": -4.2907490730285645
+        },
+        {
+            "text": "Normandy, a region in France.",
+            "probability": 6.773017528696318e-06,
+            "start_logit": 1.3955339193344116,
+            "end_logit": 1.0899986028671265
+        },
+        {
+            "text": "in France.",
+            "probability": 6.665416022851623e-06,
+            "start_logit": 1.3795195817947388,
+            "end_logit": 1.0899986028671265
+        },
+        {
+            "text": "Normandy",
+            "probability": 5.158346418008121e-06,
+            "start_logit": 1.3955339193344116,
+            "end_logit": 0.8176679611206055
+        },
+        {
+            "text": "",
+            "probability": 1.5831536527431765e-06,
+            "start_logit": 0.5203005075454712,
+            "end_logit": 0.51170414686203
+        },
+        {
+            "text": "in France. They were descended from Norse (\"Norman\" comes from \"Norseman\") raiders and pirates from Denmark, Iceland and Norway",
+            "probability": 8.785472918217177e-07,
+            "start_logit": 1.3795195817947388,
+            "end_logit": -0.9364193081855774
+        },
+        {
+            "text": "a region in France.",
+            "probability": 8.409405789653105e-07,
+            "start_logit": -0.6906470656394958,
+            "end_logit": 1.0899986028671265
+        },
+        {
+            "text": "Normandy, a region in France. They were descended from Norse (\"Norman\" comes from \"Norseman\") raiders and pirates from Denmark",
+            "probability": 4.349851661372002e-07,
+            "start_logit": 1.3955339193344116,
+            "end_logit": -1.6553914546966553
+        }
+    ],
+    "56ddde6b9a695914005b9629": [
+        {
+            "text": "10th and 11th centuries",
+            "probability": 0.5053231937684821,
+            "start_logit": 6.57063627243042,
+            "end_logit": 6.205585479736328
+        },
+        {
+            "text": "the 10th and 11th centuries",
+            "probability": 0.27841323447246946,
+            "start_logit": 5.974544525146484,
+            "end_logit": 6.205585479736328
+        },
+        {
+            "text": "in the 10th and 11th centuries",
+            "probability": 0.1611633400417487,
+            "start_logit": 5.4278564453125,
+            "end_logit": 6.205585479736328
+        },
+        {
+            "text": "10th and 11th",
+            "probability": 0.018300484390849216,
+            "start_logit": 6.57063627243042,
+            "end_logit": 2.887314796447754
+        },
+        {
+            "text": "the 10th and 11th",
+            "probability": 0.010082848193988954,
+            "start_logit": 5.974544525146484,
+            "end_logit": 2.887314796447754
+        },
+        {
+            "text": "in the 10th and 11th",
+            "probability": 0.005836595717714913,
+            "start_logit": 5.4278564453125,
+            "end_logit": 2.887314796447754
+        },
+        {
+            "text": "10th and 11th centuries gave their name to Normandy, a region in France.",
+            "probability": 0.005129608083517106,
+            "start_logit": 6.57063627243042,
+            "end_logit": 1.6154165267944336
+        },
+        {
+            "text": "11th centuries",
+            "probability": 0.0037408063542842675,
+            "start_logit": 1.6647392511367798,
+            "end_logit": 6.205585479736328
+        },
+        {
+            "text": "the 10th and 11th centuries gave their name to Normandy, a region in France.",
+            "probability": 0.002826212601597783,
+            "start_logit": 5.974544525146484,
+            "end_logit": 1.6154165267944336
+        },
+        {
+            "text": "10th",
+            "probability": 0.0017037108482444133,
+            "start_logit": 6.57063627243042,
+            "end_logit": 0.5131959915161133
+        },
+        {
+            "text": "in the 10th and 11th centuries gave their name to Normandy, a region in France.",
+            "probability": 0.0016359921373874868,
+            "start_logit": 5.4278564453125,
+            "end_logit": 1.6154165267944336
+        },
+        {
+            "text": "10th and 11th centuries gave their name to Normandy",
+            "probability": 0.0014718815938910969,
+            "start_logit": 6.57063627243042,
+            "end_logit": 0.3669288456439972
+        },
+        {
+            "text": "the 10th",
+            "probability": 0.0009386777684360205,
+            "start_logit": 5.974544525146484,
+            "end_logit": 0.5131959915161133
+        },
+        {
+            "text": "the 10th and 11th centuries gave their name to Normandy",
+            "probability": 0.0008109489537966134,
+            "start_logit": 5.974544525146484,
+            "end_logit": 0.3669288456439972
+        },
+        {
+            "text": "10th and 11th centuries gave their name to Normandy, a region in France",
+            "probability": 0.000707543200319436,
+            "start_logit": 6.57063627243042,
+            "end_logit": -0.3655693233013153
+        },
+        {
+            "text": "in the 10th",
+            "probability": 0.0005433665704531851,
+            "start_logit": 5.4278564453125,
+            "end_logit": 0.5131959915161133
+        },
+        {
+            "text": "in the 10th and 11th centuries gave their name to Normandy",
+            "probability": 0.0004694289847422738,
+            "start_logit": 5.4278564453125,
+            "end_logit": 0.3669288456439972
+        },
+        {
+            "text": "the 10th and 11th centuries gave their name to Normandy, a region in France",
+            "probability": 0.0003898285164013049,
+            "start_logit": 5.974544525146484,
+            "end_logit": -0.3655693233013153
+        },
+        {
+            "text": "10th and 11th centuries gave their name to Normandy,",
+            "probability": 0.000285795324928372,
+            "start_logit": 6.57063627243042,
+            "end_logit": -1.2720921039581299
+        },
+        {
+            "text": "in the 10th and 11th centuries gave their name to Normandy, a region in France",
+            "probability": 0.00022565761238252626,
+            "start_logit": 5.4278564453125,
+            "end_logit": -0.3655693233013153
+        },
+        {
+            "text": "",
+            "probability": 8.448643647121613e-07,
+            "start_logit": 0.12399287521839142,
+            "end_logit": -0.6493037939071655
+        }
+    ],
+    "56ddde6b9a695914005b962a": [
+        {
+            "text": "Denmark, Iceland and Norway",
+            "probability": 0.9875671863601525,
+            "start_logit": 6.9119439125061035,
+            "end_logit": 7.143736839294434
+        },
+        {
+            "text": "raiders and pirates from Denmark, Iceland and Norway",
+            "probability": 0.005012262986813327,
+            "start_logit": 1.6285868883132935,
+            "end_logit": 7.143736839294434
+        },
+        {
+            "text": "from Denmark, Iceland and Norway",
+            "probability": 0.002818699694392226,
+            "start_logit": 1.052975058555603,
+            "end_logit": 7.143736839294434
+        },
+        {
+            "text": "Norway",
+            "probability": 0.0011669081734688247,
+            "start_logit": 0.17105704545974731,
+            "end_logit": 7.143736839294434
+        },
+        {
+            "text": "Iceland and Norway",
+            "probability": 0.0010904423780041285,
+            "start_logit": 0.10328284651041031,
+            "end_logit": 7.143736839294434
+        },
+        {
+            "text": "Denmark",
+            "probability": 0.0007836206866032116,
+            "start_logit": 6.9119439125061035,
+            "end_logit": 0.004662114195525646
+        },
+        {
+            "text": "Denmark, Iceland",
+            "probability": 0.0007149380022824854,
+            "start_logit": 6.9119439125061035,
+            "end_logit": -0.0870671421289444
+        },
+        {
+            "text": "Norse (\"Norman\" comes from \"Norseman\") raiders and pirates from Denmark, Iceland and Norway",
+            "probability": 0.00031797351463788004,
+            "start_logit": -1.1290878057479858,
+            "end_logit": 7.143736839294434
+        },
+        {
+            "text": "France. They were descended from Norse (\"Norman\" comes from \"Norseman\") raiders and pirates from Denmark, Iceland and Norway",
+            "probability": 0.0001820409560895776,
+            "start_logit": -1.6868242025375366,
+            "end_logit": 7.143736839294434
+        },
+        {
+            "text": "pirates from Denmark, Iceland and Norway",
+            "probability": 8.702528931269271e-05,
+            "start_logit": -2.4248571395874023,
+            "end_logit": 7.143736839294434
+        },
+        {
+            "text": "Denmark, Iceland and Norway who, under their leader Rollo, agreed to swear fealty to King Charles III of West Francia",
+            "probability": 6.219325020287554e-05,
+            "start_logit": 6.9119439125061035,
+            "end_logit": -2.5290164947509766
+        },
+        {
+            "text": "",
+            "probability": 6.11328050028522e-05,
+            "start_logit": 2.1730597019195557,
+            "end_logit": 2.1926698684692383
+        },
+        {
+            "text": "Denmark,",
+            "probability": 5.5486305625458355e-05,
+            "start_logit": 6.9119439125061035,
+            "end_logit": -2.6431267261505127
+        },
+        {
+            "text": ", Iceland and Norway",
+            "probability": 3.344909936438994e-05,
+            "start_logit": -3.381031036376953,
+            "end_logit": 7.143736839294434
+        },
+        {
+            "text": "Denmark, Iceland and Norway who, under their leader Rollo, agreed to swear fealty to King Charles III of West Francia.",
+            "probability": 3.0122353954578975e-05,
+            "start_logit": 6.9119439125061035,
+            "end_logit": -3.253995418548584
+        },
+        {
+            "text": "raiders and pirates from Denmark",
+            "probability": 3.977160255434145e-06,
+            "start_logit": 1.6285868883132935,
+            "end_logit": 0.004662114195525646
+        },
+        {
+            "text": "raiders and pirates from Denmark, Iceland",
+            "probability": 3.6285706291176075e-06,
+            "start_logit": 1.6285868883132935,
+            "end_logit": -0.0870671421289444
+        },
+        {
+            "text": "raiders and pirates",
+            "probability": 3.4974181990675422e-06,
+            "start_logit": 1.6285868883132935,
+            "end_logit": -0.12388090789318085
+        },
+        {
+            "text": "Norse (\"Norman\" comes from \"Norseman\")",
+            "probability": 3.1783964063168088e-06,
+            "start_logit": -1.1290878057479858,
+            "end_logit": 2.5381455421447754
+        },
+        {
+            "text": "from Denmark",
+            "probability": 2.2365986034720096e-06,
+            "start_logit": 1.052975058555603,
+            "end_logit": 0.004662114195525646
+        }
+    ],
+    "56ddde6b9a695914005b962b": [
+        {
+            "text": "Rollo",
+            "probability": 0.9959707066044552,
+            "start_logit": 7.185461044311523,
+            "end_logit": 6.677396774291992
+        },
+        {
+            "text": "leader Rollo",
+            "probability": 0.001594357174185077,
+            "start_logit": 0.7482138276100159,
+            "end_logit": 6.677396774291992
+        },
+        {
+            "text": "Rollo, agreed to swear fealty to King Charles III",
+            "probability": 0.0007772151557763445,
+            "start_logit": 7.185461044311523,
+            "end_logit": -0.4783591330051422
+        },
+        {
+            "text": "their leader Rollo",
+            "probability": 0.0004710908191831024,
+            "start_logit": -0.47096118330955505,
+            "end_logit": 6.677396774291992
+        },
+        {
+            "text": "Rollo,",
+            "probability": 0.00035172008268219494,
+            "start_logit": 7.185461044311523,
+            "end_logit": -1.2712407112121582
+        },
+        {
+            "text": "Rollo, agreed to swear fealty to King Charles III of West Francia",
+            "probability": 0.00031023037660927186,
+            "start_logit": 7.185461044311523,
+            "end_logit": -1.396761178970337
+        },
+        {
+            "text": "Rollo, agreed to swear fealty to King Charles III of West Francia.",
+            "probability": 0.00016284653276580765,
+            "start_logit": 7.185461044311523,
+            "end_logit": -2.0412681102752686
+        },
+        {
+            "text": "Roll",
+            "probability": 0.00012111953585256199,
+            "start_logit": 7.185461044311523,
+            "end_logit": -2.3372983932495117
+        },
+        {
+            "text": "Norseman\") raiders and pirates from Denmark, Iceland and Norway who, under their leader Rollo",
+            "probability": 4.951697848805565e-05,
+            "start_logit": -2.72369647026062,
+            "end_logit": 6.677396774291992
+        },
+        {
+            "text": "under their leader Rollo",
+            "probability": 3.4777834005290755e-05,
+            "start_logit": -3.0770318508148193,
+            "end_logit": 6.677396774291992
+        },
+        {
+            "text": "",
+            "probability": 2.964925368009035e-05,
+            "start_logit": 2.1227962970733643,
+            "end_logit": 1.3180253505706787
+        },
+        {
+            "text": "Rollo, agreed to swear fealty to King Charles",
+            "probability": 2.7728152908503157e-05,
+            "start_logit": 7.185461044311523,
+            "end_logit": -3.8116281032562256
+        },
+        {
+            "text": "\"Norman\" comes from \"Norseman\") raiders and pirates from Denmark, Iceland and Norway who, under their leader Rollo",
+            "probability": 2.688257720918323e-05,
+            "start_logit": -3.33453369140625,
+            "end_logit": 6.677396774291992
+        },
+        {
+            "text": "Rollo, agreed to swear fealty to King",
+            "probability": 1.9998384143208034e-05,
+            "start_logit": 7.185461044311523,
+            "end_logit": -4.138424873352051
+        },
+        {
+            "text": "Norman\" comes from \"Norseman\") raiders and pirates from Denmark, Iceland and Norway who, under their leader Rollo",
+            "probability": 1.5642721297111358e-05,
+            "start_logit": -3.8760063648223877,
+            "end_logit": 6.677396774291992
+        },
+        {
+            "text": "Norse (\"Norman\" comes from \"Norseman\") raiders and pirates from Denmark, Iceland and Norway who, under their leader Rollo",
+            "probability": 1.3568567348209096e-05,
+            "start_logit": -4.018256187438965,
+            "end_logit": 6.677396774291992
+        },
+        {
+            "text": "raiders and pirates from Denmark, Iceland and Norway who, under their leader Rollo",
+            "probability": 1.0405564401735835e-05,
+            "start_logit": -4.2836713790893555,
+            "end_logit": 6.677396774291992
+        },
+        {
+            "text": "pirates from Denmark, Iceland and Norway who, under their leader Rollo",
+            "probability": 5.7611329674034406e-06,
+            "start_logit": -4.8748779296875,
+            "end_logit": 6.677396774291992
+        },
+        {
+            "text": "Denmark, Iceland and Norway who, under their leader Rollo",
+            "probability": 5.538380349327593e-06,
+            "start_logit": -4.914309978485107,
+            "end_logit": 6.677396774291992
+        },
+        {
+            "text": "leader Rollo, agreed to swear fealty to King Charles III",
+            "probability": 1.2441716922800144e-06,
+            "start_logit": 0.7482138276100159,
+            "end_logit": -0.4783591330051422
+        }
+    ],
+    "56ddde6b9a695914005b962c": [
+        {
+            "text": "10th",
+            "probability": 0.6543373660801715,
+            "start_logit": 5.804725646972656,
+            "end_logit": 5.710677623748779
+        },
+        {
+            "text": "10th century",
+            "probability": 0.20813011078981258,
+            "start_logit": 5.804725646972656,
+            "end_logit": 4.565217971801758
+        },
+        {
+            "text": "the 10th",
+            "probability": 0.06857252627689636,
+            "start_logit": 3.548994541168213,
+            "end_logit": 5.710677623748779
+        },
+        {
+            "text": "the 10th century",
+            "probability": 0.021811390012226695,
+            "start_logit": 3.548994541168213,
+            "end_logit": 4.565217971801758
+        },
+        {
+            "text": "the first half of the 10th",
+            "probability": 0.017163690382459015,
+            "start_logit": 2.1638987064361572,
+            "end_logit": 5.710677623748779
+        },
+        {
+            "text": "first half of the 10th",
+            "probability": 0.012210140628805434,
+            "start_logit": 1.8233693838119507,
+            "end_logit": 5.710677623748779
+        },
+        {
+            "text": "the first half of the 10th century",
+            "probability": 0.005459386802656702,
+            "start_logit": 2.1638987064361572,
+            "end_logit": 4.565217971801758
+        },
+        {
+            "text": "first half of the 10th century",
+            "probability": 0.0038837731934157935,
+            "start_logit": 1.8233693838119507,
+            "end_logit": 4.565217971801758
+        },
+        {
+            "text": "half of the 10th",
+            "probability": 0.0023058113956688805,
+            "start_logit": 0.15653520822525024,
+            "end_logit": 5.710677623748779
+        },
+        {
+            "text": "10th century,",
+            "probability": 0.0015773653107687374,
+            "start_logit": 5.804725646972656,
+            "end_logit": -0.3171895146369934
+        },
+        {
+            "text": "10th century, and it continued to evolve over the succeeding centuries.",
+            "probability": 0.001537983276759576,
+            "start_logit": 5.804725646972656,
+            "end_logit": -0.34247344732284546
+        },
+        {
+            "text": "in the first half of the 10th",
+            "probability": 0.0010784025865441327,
+            "start_logit": -0.6034165620803833,
+            "end_logit": 5.710677623748779
+        },
+        {
+            "text": "half of the 10th century",
+            "probability": 0.000733427137312798,
+            "start_logit": 0.15653520822525024,
+            "end_logit": 4.565217971801758
+        },
+        {
+            "text": "in the first half of the 10th century",
+            "probability": 0.0003430157919270511,
+            "start_logit": -0.6034165620803833,
+            "end_logit": 4.565217971801758
+        },
+        {
+            "text": "10th century, and it continued to evolve over the succeeding centuries",
+            "probability": 0.00019469820693847453,
+            "start_logit": 5.804725646972656,
+            "end_logit": -2.409250020980835
+        },
+        {
+            "text": "the 10th century,",
+            "probability": 0.00016530299174096296,
+            "start_logit": 3.548994541168213,
+            "end_logit": -0.3171895146369934
+        },
+        {
+            "text": "the 10th century, and it continued to evolve over the succeeding centuries.",
+            "probability": 0.0001611758767358878,
+            "start_logit": 3.548994541168213,
+            "end_logit": -0.34247344732284546
+        },
+        {
+            "text": "The distinct cultural and ethnic identity of the Normans emerged initially in the first half of the 10th",
+            "probability": 0.00014351840321931333,
+            "start_logit": -2.6201894283294678,
+            "end_logit": 5.710677623748779
+        },
+        {
+            "text": "initially in the first half of the 10th",
+            "probability": 0.00012139955717851797,
+            "start_logit": -2.7875654697418213,
+            "end_logit": 5.710677623748779
+        },
+        {
+            "text": "century",
+            "probability": 6.863135214136178e-05,
+            "start_logit": -2.2124435901641846,
+            "end_logit": 4.565217971801758
+        },
+        {
+            "text": "",
+            "probability": 8.839466200843493e-07,
+            "start_logit": -1.122597575187683,
+            "end_logit": -0.8767361044883728
+        }
+    ],
+    "5ad39d53604f3c001a3fe8d1": [
+        {
+            "text": "The Normans",
+            "probability": 0.7572602007490836,
+            "start_logit": 6.0028839111328125,
+            "end_logit": 5.940916061401367
+        },
+        {
+            "text": "Normans",
+            "probability": 0.22468268659814863,
+            "start_logit": 4.787866115570068,
+            "end_logit": 5.940916061401367
+        },
+        {
+            "text": "",
+            "probability": 0.008531014521033563,
+            "start_logit": 4.222487926483154,
+            "end_logit": 3.2353134155273438
+        },
+        {
+            "text": "The Normans (Norman: Nourmands; French: Normands; Latin: Normanni)",
+            "probability": 0.005103952885129262,
+            "start_logit": 6.0028839111328125,
+            "end_logit": 0.9412244558334351
+        },
+        {
+            "text": "Normans (Norman: Nourmands; French: Normands; Latin: Normanni)",
+            "probability": 0.001514366984250363,
+            "start_logit": 4.787866115570068,
+            "end_logit": 0.9412244558334351
+        },
+        {
+            "text": "The Normans (Norman: Nourmands; French: Normands; Latin: Normanni) were the people who in the 10th and 11th",
+            "probability": 0.0006037673302760695,
+            "start_logit": 6.0028839111328125,
+            "end_logit": -1.193357229232788
+        },
+        {
+            "text": "Normans (Norman: Nourmands; French: Normands; Latin: Normanni) were the people who in the 10th and 11th centuries",
+            "probability": 0.0004316354174564553,
+            "start_logit": 4.787866115570068,
+            "end_logit": -0.31394705176353455
+        },
+        {
+            "text": "The Normans (Norman: Nourmands; French: Normands; Latin: Normanni) were the people",
+            "probability": 0.0003329502697314016,
+            "start_logit": 6.0028839111328125,
+            "end_logit": -1.78855299949646
+        },
+        {
+            "text": "The Normans (Norman: Nourmands",
+            "probability": 0.000279406143201904,
+            "start_logit": 6.0028839111328125,
+            "end_logit": -1.9638797044754028
+        },
+        {
+            "text": "The Norman",
+            "probability": 0.00023574981631810247,
+            "start_logit": 6.0028839111328125,
+            "end_logit": -2.133774995803833
+        },
+        {
+            "text": "The",
+            "probability": 0.00019970501405895024,
+            "start_logit": 6.0028839111328125,
+            "end_logit": -2.2997047901153564
+        },
+        {
+            "text": "Normans (Norman: Nourmands; French: Normands; Latin: Normanni) were the people who in the 10th and 11th",
+            "probability": 0.00017914062525988783,
+            "start_logit": 4.787866115570068,
+            "end_logit": -1.193357229232788
+        },
+        {
+            "text": "The Normans (Norman: Nourmands; French: Normands; Latin: Normanni) were",
+            "probability": 0.00016937619437953783,
+            "start_logit": 6.0028839111328125,
+            "end_logit": -2.464423894882202
+        },
+        {
+            "text": "Normans (Norman: Nourmands; French: Normands; Latin: Normanni) were the people",
+            "probability": 9.878792128891647e-05,
+            "start_logit": 4.787866115570068,
+            "end_logit": -1.78855299949646
+        },
+        {
+            "text": "Normans (Norman: Nourmands",
+            "probability": 8.290112545797464e-05,
+            "start_logit": 4.787866115570068,
+            "end_logit": -1.9638797044754028
+        },
+        {
+            "text": "The Normans (Norman: Nourmands; French: Normands; Latin: Normanni) were the people who in the 10th",
+            "probability": 7.600472364567207e-05,
+            "start_logit": 6.0028839111328125,
+            "end_logit": -3.2657506465911865
+        },
+        {
+            "text": "The Normans (Norman: Nourmands; French: Normands",
+            "probability": 7.559991462108562e-05,
+            "start_logit": 6.0028839111328125,
+            "end_logit": -3.2710909843444824
+        },
+        {
+            "text": "Norman",
+            "probability": 6.994808659292322e-05,
+            "start_logit": 4.787866115570068,
+            "end_logit": -2.133774995803833
+        },
+        {
+            "text": "Normans (Norman: Nourmands; French: Normands; Latin: Normanni) were",
+            "probability": 5.025471873646577e-05,
+            "start_logit": 4.787866115570068,
+            "end_logit": -2.464423894882202
+        },
+        {
+            "text": "Normans (Norman: Nourmands; French: Normands; Latin: Normanni) were the people who in the 10th",
+            "probability": 2.2550961328704293e-05,
+            "start_logit": 4.787866115570068,
+            "end_logit": -3.2657506465911865
+        }
+    ],
+    "5ad39d53604f3c001a3fe8d2": [
+        {
+            "text": "Normandy",
+            "probability": 0.9772205065003771,
+            "start_logit": 4.632091999053955,
+            "end_logit": 5.042831897735596
+        },
+        {
+            "text": "Normandy, a region in France",
+            "probability": 0.007452140723507392,
+            "start_logit": 4.632091999053955,
+            "end_logit": 0.1666209101676941
+        },
+        {
+            "text": "Normands; Latin: Normanni) were the people who in the 10th and 11th centuries gave their name to Normandy",
+            "probability": 0.005626670537953322,
+            "start_logit": -0.525102436542511,
+            "end_logit": 5.042831897735596
+        },
+        {
+            "text": "Normandy,",
+            "probability": 0.003756125246598146,
+            "start_logit": 4.632091999053955,
+            "end_logit": -0.5184925198554993
+        },
+        {
+            "text": "Normandy, a region in France.",
+            "probability": 0.003022021813666653,
+            "start_logit": 4.632091999053955,
+            "end_logit": -0.7359543442726135
+        },
+        {
+            "text": "",
+            "probability": 0.0017539218684263953,
+            "start_logit": 1.5334070920944214,
+            "end_logit": 1.8186588287353516
+        },
+        {
+            "text": "French: Normands; Latin: Normanni) were the people who in the 10th and 11th centuries gave their name to Normandy",
+            "probability": 0.0003914002229454518,
+            "start_logit": -3.1906449794769287,
+            "end_logit": 5.042831897735596
+        },
+        {
+            "text": "Normandy, a region",
+            "probability": 0.00023507748191753066,
+            "start_logit": 4.632091999053955,
+            "end_logit": -3.2897205352783203
+        },
+        {
+            "text": "Normanni) were the people who in the 10th and 11th centuries gave their name to Normandy",
+            "probability": 0.0001754377046786538,
+            "start_logit": -3.993091583251953,
+            "end_logit": 5.042831897735596
+        },
+        {
+            "text": "Normandy, a region in France. They were descended from Norse (\"Norman\" comes from \"Norseman\") raiders and pirates from Denmark",
+            "probability": 9.002447232679077e-05,
+            "start_logit": 4.632091999053955,
+            "end_logit": -4.24955415725708
+        },
+        {
+            "text": "Normandy, a region in France. They were descended from Norse",
+            "probability": 8.691275453991052e-05,
+            "start_logit": 4.632091999053955,
+            "end_logit": -4.284730911254883
+        },
+        {
+            "text": "Nourmands; French: Normands; Latin: Normanni) were the people who in the 10th and 11th centuries gave their name to Normandy",
+            "probability": 6.093577099023678e-05,
+            "start_logit": -5.050555229187012,
+            "end_logit": 5.042831897735596
+        },
+        {
+            "text": "Normands; Latin: Normanni) were the people who in the 10th and 11th centuries gave their name to Normandy, a region in France",
+            "probability": 4.290816696408019e-05,
+            "start_logit": -0.525102436542511,
+            "end_logit": 0.1666209101676941
+        },
+        {
+            "text": "France",
+            "probability": 2.4422570230001192e-05,
+            "start_logit": -1.0886569023132324,
+            "end_logit": 0.1666209101676941
+        },
+        {
+            "text": "Normands; Latin: Normanni) were the people who in the 10th and 11th centuries gave their name to Normandy,",
+            "probability": 2.1627134430061502e-05,
+            "start_logit": -0.525102436542511,
+            "end_logit": -0.5184925198554993
+        },
+        {
+            "text": "Normands; Latin: Normanni) were the people who in the 10th and 11th centuries gave their name to Normandy, a region in France.",
+            "probability": 1.740029091786548e-05,
+            "start_logit": -0.525102436542511,
+            "end_logit": -0.7359543442726135
+        },
+        {
+            "text": "France.",
+            "probability": 9.903938038643534e-06,
+            "start_logit": -1.0886569023132324,
+            "end_logit": -0.7359543442726135
+        },
+        {
+            "text": "Normands",
+            "probability": 7.41273102389388e-06,
+            "start_logit": -0.525102436542511,
+            "end_logit": -1.5892423391342163
+        },
+        {
+            "text": "French: Normands; Latin: Normanni) were the people who in the 10th and 11th centuries gave their name to Normandy, a region in France",
+            "probability": 2.9847608817043876e-06,
+            "start_logit": -3.1906449794769287,
+            "end_logit": 0.1666209101676941
+        },
+        {
+            "text": "Normans (Norman: Nourmands; French: Normands",
+            "probability": 2.1653095863496206e-06,
+            "start_logit": -1.7557380199432373,
+            "end_logit": -1.5892423391342163
+        }
+    ],
+    "5ad39d53604f3c001a3fe8d3": [
+        {
+            "text": "King Charles III of West Francia",
+            "probability": 0.38563113202779975,
+            "start_logit": 1.0328072309494019,
+            "end_logit": 3.3386878967285156
+        },
+        {
+            "text": "",
+            "probability": 0.24704457750278858,
+            "start_logit": 1.8624221086502075,
+            "end_logit": 2.06376051902771
+        },
+        {
+            "text": "West Francia",
+            "probability": 0.23607189708183704,
+            "start_logit": 0.5420623421669006,
+            "end_logit": 3.3386878967285156
+        },
+        {
+            "text": "Rollo, agreed to swear fealty to King Charles III of West Francia",
+            "probability": 0.04019556576400867,
+            "start_logit": -1.228317379951477,
+            "end_logit": 3.3386878967285156
+        },
+        {
+            "text": "King Charles III of West Francia.",
+            "probability": 0.017847795527444255,
+            "start_logit": 1.0328072309494019,
+            "end_logit": 0.26568660140037537
+        },
+        {
+            "text": "of West Francia",
+            "probability": 0.016842427715530333,
+            "start_logit": -2.098172903060913,
+            "end_logit": 3.3386878967285156
+        },
+        {
+            "text": "Charles III of West Francia",
+            "probability": 0.016656616844653558,
+            "start_logit": -2.109266519546509,
+            "end_logit": 3.3386878967285156
+        },
+        {
+            "text": "West Francia.",
+            "probability": 0.01092588901403519,
+            "start_logit": 0.5420623421669006,
+            "end_logit": 0.26568660140037537
+        },
+        {
+            "text": "Normans",
+            "probability": 0.004493771033541267,
+            "start_logit": 0.14514833688735962,
+            "end_logit": -0.22584228217601776
+        },
+        {
+            "text": "III of West Francia",
+            "probability": 0.0033852509788763305,
+            "start_logit": -3.702646017074585,
+            "end_logit": 3.3386878967285156
+        },
+        {
+            "text": "The Normans",
+            "probability": 0.003134371799790296,
+            "start_logit": -0.21511511504650116,
+            "end_logit": -0.22584228217601776
+        },
+        {
+            "text": "Francia.",
+            "probability": 0.0030385315738620305,
+            "start_logit": -3.810699701309204,
+            "end_logit": 3.3386878967285156
+        },
+        {
+            "text": "King Charles III",
+            "probability": 0.002942303397708315,
+            "start_logit": 1.0328072309494019,
+            "end_logit": -1.5370006561279297
+        },
+        {
+            "text": "pirates from Denmark, Iceland and Norway who, under their leader Rollo, agreed to swear fealty to King Charles III of West Francia",
+            "probability": 0.002938723368760316,
+            "start_logit": -3.8440988063812256,
+            "end_logit": 3.3386878967285156
+        },
+        {
+            "text": "under their leader Rollo, agreed to swear fealty to King Charles III of West Francia",
+            "probability": 0.0020067150765119045,
+            "start_logit": -4.225574970245361,
+            "end_logit": 3.3386878967285156
+        },
+        {
+            "text": "Rollo, agreed to swear fealty to King Charles III of West Francia.",
+            "probability": 0.0018603327876916553,
+            "start_logit": -1.228317379951477,
+            "end_logit": 0.26568660140037537
+        },
+        {
+            "text": "Denmark, Iceland and Norway who, under their leader Rollo, agreed to swear fealty to King Charles III of West Francia",
+            "probability": 0.0018337062680747198,
+            "start_logit": -4.31573486328125,
+            "end_logit": 3.3386878967285156
+        },
+        {
+            "text": "their leader Rollo, agreed to swear fealty to King Charles III of West Francia",
+            "probability": 0.0015999881124733799,
+            "start_logit": -4.452077865600586,
+            "end_logit": 3.3386878967285156
+        },
+        {
+            "text": "of West Francia.",
+            "probability": 0.0007795019153974206,
+            "start_logit": -2.098172903060913,
+            "end_logit": 0.26568660140037537
+        },
+        {
+            "text": "Charles III of West Francia.",
+            "probability": 0.000770902209215125,
+            "start_logit": -2.109266519546509,
+            "end_logit": 0.26568660140037537
+        }
+    ],
+    "5ad39d53604f3c001a3fe8d4": [
+        {
+            "text": "",
+            "probability": 0.9753805839774949,
+            "start_logit": 6.6161956787109375,
+            "end_logit": 6.340409278869629
+        },
+        {
+            "text": "first half of the 10th century",
+            "probability": 0.010205905815044878,
+            "start_logit": 3.808037281036377,
+            "end_logit": 4.5887064933776855
+        },
+        {
+            "text": "the first half of the 10th century",
+            "probability": 0.003699353733756698,
+            "start_logit": 2.7932288646698,
+            "end_logit": 4.5887064933776855
+        },
+        {
+            "text": "10th century",
+            "probability": 0.0036826618305723707,
+            "start_logit": 2.7887065410614014,
+            "end_logit": 4.5887064933776855
+        },
+        {
+            "text": "in the first half of the 10th century",
+            "probability": 0.0019666812406406277,
+            "start_logit": 2.1614181995391846,
+            "end_logit": 4.5887064933776855
+        },
+        {
+            "text": "initially in the first half of the 10th century",
+            "probability": 0.0012479154345806122,
+            "start_logit": 1.7065452337265015,
+            "end_logit": 4.5887064933776855
+        },
+        {
+            "text": "the 10th century",
+            "probability": 0.0008799391433405891,
+            "start_logit": 1.357168197631836,
+            "end_logit": 4.5887064933776855
+        },
+        {
+            "text": "first half of the 10th century,",
+            "probability": 0.000796370714585242,
+            "start_logit": 3.808037281036377,
+            "end_logit": 2.0380494594573975
+        },
+        {
+            "text": "half of the 10th century",
+            "probability": 0.0005172999273410555,
+            "start_logit": 0.8259382843971252,
+            "end_logit": 4.5887064933776855
+        },
+        {
+            "text": "the first half of the 10th century,",
+            "probability": 0.0002886619796267883,
+            "start_logit": 2.7932288646698,
+            "end_logit": 2.0380494594573975
+        },
+        {
+            "text": "10th century,",
+            "probability": 0.00028735950406924446,
+            "start_logit": 2.7887065410614014,
+            "end_logit": 2.0380494594573975
+        },
+        {
+            "text": "The distinct cultural and ethnic identity of the Normans emerged initially in the first half of the 10th century",
+            "probability": 0.00023098774331079162,
+            "start_logit": 0.019680097699165344,
+            "end_logit": 4.5887064933776855
+        },
+        {
+            "text": "first half of the 10th century, and it continued to evolve over the succeeding centuries.",
+            "probability": 0.00020395718146965525,
+            "start_logit": 3.808037281036377,
+            "end_logit": 0.6758947372436523
+        },
+        {
+            "text": "in the first half of the 10th century,",
+            "probability": 0.000153460885623848,
+            "start_logit": 2.1614181995391846,
+            "end_logit": 2.0380494594573975
+        },
+        {
+            "text": "first half of the 10th century, and it continued to evolve over the succeeding centuries",
+            "probability": 0.00010493457008897023,
+            "start_logit": 3.808037281036377,
+            "end_logit": 0.011321674101054668
+        },
+        {
+            "text": "initially in the first half of the 10th century,",
+            "probability": 9.737531625207782e-05,
+            "start_logit": 1.7065452337265015,
+            "end_logit": 2.0380494594573975
+        },
+        {
+            "text": "the first half of the 10th century, and it continued to evolve over the succeeding centuries.",
+            "probability": 7.392874032641107e-05,
+            "start_logit": 2.7932288646698,
+            "end_logit": 0.6758947372436523
+        },
+        {
+            "text": "10th century, and it continued to evolve over the succeeding centuries.",
+            "probability": 7.359516547391525e-05,
+            "start_logit": 2.7887065410614014,
+            "end_logit": 0.6758947372436523
+        },
+        {
+            "text": "the 10th century,",
+            "probability": 6.866198621396834e-05,
+            "start_logit": 1.357168197631836,
+            "end_logit": 2.0380494594573975
+        },
+        {
+            "text": "half of the 10th century,",
+            "probability": 4.036511018788768e-05,
+            "start_logit": 0.8259382843971252,
+            "end_logit": 2.0380494594573975
+        }
+    ],
+    "56dddf4066d3e219004dad5f": [
+        {
+            "text": "William the Conqueror",
+            "probability": 0.9801019102733266,
+            "start_logit": 6.436299800872803,
+            "end_logit": 6.877797603607178
+        },
+        {
+            "text": "William the Conqueror, led to the Norman conquest of England at the Battle of Hastings in 1066.",
+            "probability": 0.007810927696953855,
+            "start_logit": 6.436299800872803,
+            "end_logit": 2.0456647872924805
+        },
+        {
+            "text": "the Conqueror",
+            "probability": 0.007158567321260715,
+            "start_logit": 1.5169531106948853,
+            "end_logit": 6.877797603607178
+        },
+        {
+            "text": "Roger II after conquering southern Italy on the Saracens and Byzantines, and an expedition on behalf of their duke, William the Conqueror",
+            "probability": 0.0018383843091755005,
+            "start_logit": 0.15753033757209778,
+            "end_logit": 6.877797603607178
+        },
+        {
+            "text": "Conqueror",
+            "probability": 0.0008886417737643784,
+            "start_logit": -0.5694178342819214,
+            "end_logit": 6.877797603607178
+        },
+        {
+            "text": "",
+            "probability": 0.0007904549170574432,
+            "start_logit": 3.067737340927124,
+            "end_logit": 3.1235568523406982
+        },
+        {
+            "text": "duke, William the Conqueror",
+            "probability": 0.00037317509921835917,
+            "start_logit": -1.437064290046692,
+            "end_logit": 6.877797603607178
+        },
+        {
+            "text": "William",
+            "probability": 0.0002091314725832444,
+            "start_logit": 6.436299800872803,
+            "end_logit": -1.5746511220932007
+        },
+        {
+            "text": "their duke, William the Conqueror",
+            "probability": 0.00015185264427565614,
+            "start_logit": -2.3362014293670654,
+            "end_logit": 6.877797603607178
+        },
+        {
+            "text": ", William the Conqueror",
+            "probability": 0.00014729152252472178,
+            "start_logit": -2.3666982650756836,
+            "end_logit": 6.877797603607178
+        },
+        {
+            "text": "William the Conqueror, led to the Norman conquest of England at the Battle of Hastings in 1066",
+            "probability": 0.0001288500113984829,
+            "start_logit": 6.436299800872803,
+            "end_logit": -2.0589652061462402
+        },
+        {
+            "text": "William the Conqueror,",
+            "probability": 0.00010418066118366165,
+            "start_logit": 6.436299800872803,
+            "end_logit": -2.2714877128601074
+        },
+        {
+            "text": "William the Conqueror, led to the Norman conquest of England at the Battle of Hastings",
+            "probability": 9.780130944812325e-05,
+            "start_logit": 6.436299800872803,
+            "end_logit": -2.3346762657165527
+        },
+        {
+            "text": "William the Conqueror, led to the Norman conquest of England",
+            "probability": 9.417457965606224e-05,
+            "start_logit": 6.436299800872803,
+            "end_logit": -2.3724639415740967
+        },
+        {
+            "text": "the Conqueror, led to the Norman conquest of England at the Battle of Hastings in 1066.",
+            "probability": 5.7050242606455823e-05,
+            "start_logit": 1.5169531106948853,
+            "end_logit": 2.0456647872924805
+        },
+        {
+            "text": "William the",
+            "probability": 2.0447749356159687e-05,
+            "start_logit": 6.436299800872803,
+            "end_logit": -3.8997414112091064
+        },
+        {
+            "text": "William the Conqueror, led to the Norman conquest of England at",
+            "probability": 1.589216902633433e-05,
+            "start_logit": 6.436299800872803,
+            "end_logit": -4.151787757873535
+        },
+        {
+            "text": "Conqueror, led to the Norman conquest of England at the Battle of Hastings in 1066.",
+            "probability": 7.0820356236533354e-06,
+            "start_logit": -0.5694178342819214,
+            "end_logit": 2.0456647872924805
+        },
+        {
+            "text": "duke, William the Conqueror, led to the Norman conquest of England at the Battle of Hastings in 1066.",
+            "probability": 2.9740210561219143e-06,
+            "start_logit": -1.437064290046692,
+            "end_logit": 2.0456647872924805
+        },
+        {
+            "text": "their duke, William the Conqueror, led to the Norman conquest of England at the Battle of Hastings in 1066.",
+            "probability": 1.2101905042687105e-06,
+            "start_logit": -2.3362014293670654,
+            "end_logit": 2.0456647872924805
+        }
+    ],
+    "56dddf4066d3e219004dad60": [
+        {
+            "text": "Richard I",
+            "probability": 0.5226123479127875,
+            "start_logit": 6.450464248657227,
+            "end_logit": 5.516252517700195
+        },
+        {
+            "text": "Richard I of Normandy",
+            "probability": 0.4459793061003247,
+            "start_logit": 6.450464248657227,
+            "end_logit": 5.357685089111328
+        },
+        {
+            "text": "Richard I of Normandy was forged into a cohesive and formidable principality in feudal tenure.",
+            "probability": 0.005847099280464636,
+            "start_logit": 6.450464248657227,
+            "end_logit": 1.0233582258224487
+        },
+        {
+            "text": "under Richard I",
+            "probability": 0.003692345133306468,
+            "start_logit": 1.497886061668396,
+            "end_logit": 5.516252517700195
+        },
+        {
+            "text": "under Richard I of Normandy",
+            "probability": 0.00315091965777611,
+            "start_logit": 1.497886061668396,
+            "end_logit": 5.357685089111328
+        },
+        {
+            "text": "the French crown, was a great fief of medieval France, and under Richard I",
+            "probability": 0.002662481421258497,
+            "start_logit": 1.1708828210830688,
+            "end_logit": 5.516252517700195
+        },
+        {
+            "text": "The Duchy of Normandy, which they formed by treaty with the French crown, was a great fief of medieval France, and under Richard I",
+            "probability": 0.0023484476518584618,
+            "start_logit": 1.0453788042068481,
+            "end_logit": 5.516252517700195
+        },
+        {
+            "text": "the French crown, was a great fief of medieval France, and under Richard I of Normandy",
+            "probability": 0.0022720695779580463,
+            "start_logit": 1.1708828210830688,
+            "end_logit": 5.357685089111328
+        },
+        {
+            "text": "Richard",
+            "probability": 0.0020527645447973066,
+            "start_logit": 6.450464248657227,
+            "end_logit": -0.023400019854307175
+        },
+        {
+            "text": "The Duchy of Normandy, which they formed by treaty with the French crown, was a great fief of medieval France, and under Richard I of Normandy",
+            "probability": 0.0020040840182435848,
+            "start_logit": 1.0453788042068481,
+            "end_logit": 5.357685089111328
+        },
+        {
+            "text": "they formed by treaty with the French crown, was a great fief of medieval France, and under Richard I",
+            "probability": 0.0017851186716845873,
+            "start_logit": 0.7711091637611389,
+            "end_logit": 5.516252517700195
+        },
+        {
+            "text": "they formed by treaty with the French crown, was a great fief of medieval France, and under Richard I of Normandy",
+            "probability": 0.0015233585461273515,
+            "start_logit": 0.7711091637611389,
+            "end_logit": 5.357685089111328
+        },
+        {
+            "text": "French crown, was a great fief of medieval France, and under Richard I",
+            "probability": 0.0009407403436442145,
+            "start_logit": 0.13053615391254425,
+            "end_logit": 5.516252517700195
+        },
+        {
+            "text": "French crown, was a great fief of medieval France, and under Richard I of Normandy",
+            "probability": 0.0008027952790526901,
+            "start_logit": 0.13053615391254425,
+            "end_logit": 5.357685089111328
+        },
+        {
+            "text": "Richard I of Normandy was forged into a cohesive and formidable principality in feudal tenure",
+            "probability": 0.0005395796219481999,
+            "start_logit": 6.450464248657227,
+            "end_logit": -1.3595523834228516
+        },
+        {
+            "text": "medieval France, and under Richard I",
+            "probability": 0.0004961145057130772,
+            "start_logit": -0.5093242526054382,
+            "end_logit": 5.516252517700195
+        },
+        {
+            "text": "medieval France, and under Richard I of Normandy",
+            "probability": 0.0004233669638459185,
+            "start_logit": -0.5093242526054382,
+            "end_logit": 5.357685089111328
+        },
+        {
+            "text": "Duchy of Normandy, which they formed by treaty with the French crown, was a great fief of medieval France, and under Richard I",
+            "probability": 0.0003756479438438924,
+            "start_logit": -0.7874786257743835,
+            "end_logit": 5.516252517700195
+        },
+        {
+            "text": "Duchy of Normandy, which they formed by treaty with the French crown, was a great fief of medieval France, and under Richard I of Normandy",
+            "probability": 0.00032056496560519494,
+            "start_logit": -0.7874786257743835,
+            "end_logit": 5.357685089111328
+        },
+        {
+            "text": "Normandy, which they formed by treaty with the French crown, was a great fief of medieval France, and under Richard I",
+            "probability": 0.00016232859674693615,
+            "start_logit": -1.626508355140686,
+            "end_logit": 5.516252517700195
+        },
+        {
+            "text": "",
+            "probability": 8.519263012498248e-06,
+            "start_logit": 0.7819701433181763,
+            "end_logit": 0.16048119962215424
+        }
+    ],
+    "56dddf4066d3e219004dad61": [
+        {
+            "text": "Christian",
+            "probability": 0.5306246803373444,
+            "start_logit": 5.538139343261719,
+            "end_logit": 5.258204460144043
+        },
+        {
+            "text": "Christian piety, becoming exponents of the Catholic",
+            "probability": 0.1675856762626262,
+            "start_logit": 5.538139343261719,
+            "end_logit": 4.105644226074219
+        },
+        {
+            "text": "Christian piety, becoming exponents of the Catholic orthodoxy",
+            "probability": 0.11591461249956947,
+            "start_logit": 5.538139343261719,
+            "end_logit": 3.7370033264160156
+        },
+        {
+            "text": "Catholic",
+            "probability": 0.08165043721779294,
+            "start_logit": 4.819091796875,
+            "end_logit": 4.105644226074219
+        },
+        {
+            "text": "Catholic orthodoxy",
+            "probability": 0.0564754637842017,
+            "start_logit": 4.819091796875,
+            "end_logit": 3.7370033264160156
+        },
+        {
+            "text": "The Normans were famed for their martial spirit and eventually for their Christian",
+            "probability": 0.016475565471760364,
+            "start_logit": 2.065962791442871,
+            "end_logit": 5.258204460144043
+        },
+        {
+            "text": "Christian piety",
+            "probability": 0.005522067538523141,
+            "start_logit": 5.538139343261719,
+            "end_logit": 0.6929018497467041
+        },
+        {
+            "text": "The Normans were famed for their martial spirit and eventually for their Christian piety, becoming exponents of the Catholic",
+            "probability": 0.005203430755687402,
+            "start_logit": 2.065962791442871,
+            "end_logit": 4.105644226074219
+        },
+        {
+            "text": "Normans were famed for their martial spirit and eventually for their Christian",
+            "probability": 0.0037607121312658123,
+            "start_logit": 0.5886927247047424,
+            "end_logit": 5.258204460144043
+        },
+        {
+            "text": "The Normans were famed for their martial spirit and eventually for their Christian piety, becoming exponents of the Catholic orthodoxy",
+            "probability": 0.0035990764435537767,
+            "start_logit": 2.065962791442871,
+            "end_logit": 3.7370033264160156
+        },
+        {
+            "text": "Christian piety,",
+            "probability": 0.002925354705800962,
+            "start_logit": 5.538139343261719,
+            "end_logit": 0.057565245777368546
+        },
+        {
+            "text": "Christian piety, becoming exponents of the Catholic orthodoxy into which they assimilated.",
+            "probability": 0.002011945997879016,
+            "start_logit": 5.538139343261719,
+            "end_logit": -0.31674808263778687
+        },
+        {
+            "text": "the Catholic",
+            "probability": 0.001688965125836258,
+            "start_logit": 0.940760612487793,
+            "end_logit": 4.105644226074219
+        },
+        {
+            "text": "their Christian",
+            "probability": 0.0013283932479884978,
+            "start_logit": -0.4519454836845398,
+            "end_logit": 5.258204460144043
+        },
+        {
+            "text": "Normans were famed for their martial spirit and eventually for their Christian piety, becoming exponents of the Catholic",
+            "probability": 0.0011877349642812835,
+            "start_logit": 0.5886927247047424,
+            "end_logit": 4.105644226074219
+        },
+        {
+            "text": "the Catholic orthodoxy",
+            "probability": 0.0011682128356828847,
+            "start_logit": 0.940760612487793,
+            "end_logit": 3.7370033264160156
+        },
+        {
+            "text": "Catholic orthodoxy into which they assimilated.",
+            "probability": 0.000980252453843194,
+            "start_logit": 4.819091796875,
+            "end_logit": -0.31674808263778687
+        },
+        {
+            "text": "Normans were famed for their martial spirit and eventually for their Christian piety, becoming exponents of the Catholic orthodoxy",
+            "probability": 0.0008215250921630139,
+            "start_logit": 0.5886927247047424,
+            "end_logit": 3.7370033264160156
+        },
+        {
+            "text": "Christian piety, becoming exponents of the Catholic orthodoxy into which they assimilated. They adopted the Gallo-Romance language of the Frankish",
+            "probability": 0.0006253384067444616,
+            "start_logit": 5.538139343261719,
+            "end_logit": -1.485312819480896
+        },
+        {
+            "text": "their martial spirit and eventually for their Christian",
+            "probability": 0.00044190732569201064,
+            "start_logit": -1.5525707006454468,
+            "end_logit": 5.258204460144043
+        },
+        {
+            "text": "",
+            "probability": 8.647401763183406e-06,
+            "start_logit": -0.15453216433525085,
+            "end_logit": -0.07367536425590515
+        }
+    ],
+    "5ad3a266604f3c001a3fea27": [
+        {
+            "text": "political, cultural and military",
+            "probability": 0.7684694377085981,
+            "start_logit": 5.6609272956848145,
+            "end_logit": 6.639105796813965
+        },
+        {
+            "text": "political, cultural and military impact",
+            "probability": 0.17905565041920737,
+            "start_logit": 5.6609272956848145,
+            "end_logit": 5.182401657104492
+        },
+        {
+            "text": "major political, cultural and military",
+            "probability": 0.011508635527417833,
+            "start_logit": 1.459624171257019,
+            "end_logit": 6.639105796813965
+        },
+        {
+            "text": "a major political, cultural and military",
+            "probability": 0.0073805262199378475,
+            "start_logit": 1.0153714418411255,
+            "end_logit": 6.639105796813965
+        },
+        {
+            "text": "The Norman dynasty had a major political, cultural and military",
+            "probability": 0.00482395317976699,
+            "start_logit": 0.590120255947113,
+            "end_logit": 6.639105796813965
+        },
+        {
+            "text": "political",
+            "probability": 0.0043716156824971115,
+            "start_logit": 5.6609272956848145,
+            "end_logit": 1.4698376655578613
+        },
+        {
+            "text": "cultural and military",
+            "probability": 0.004126757257277591,
+            "start_logit": 0.43401843309402466,
+            "end_logit": 6.639105796813965
+        },
+        {
+            "text": "military",
+            "probability": 0.0038169831569731497,
+            "start_logit": 0.3559868633747101,
+            "end_logit": 6.639105796813965
+        },
+        {
+            "text": "political, cultural and military impact on medieval Europe and even the Near East.",
+            "probability": 0.003734741212885171,
+            "start_logit": 5.6609272956848145,
+            "end_logit": 1.3123835325241089
+        },
+        {
+            "text": "major political, cultural and military impact",
+            "probability": 0.00268154609498056,
+            "start_logit": 1.459624171257019,
+            "end_logit": 5.182401657104492
+        },
+        {
+            "text": "a major political, cultural and military impact",
+            "probability": 0.0017196844245198268,
+            "start_logit": 1.0153714418411255,
+            "end_logit": 5.182401657104492
+        },
+        {
+            "text": "Norman dynasty had a major political, cultural and military",
+            "probability": 0.0017173968397977417,
+            "start_logit": -0.4426638185977936,
+            "end_logit": 6.639105796813965
+        },
+        {
+            "text": "political, cultural",
+            "probability": 0.0014560247366938654,
+            "start_logit": 5.6609272956848145,
+            "end_logit": 0.37041494250297546
+        },
+        {
+            "text": "The Norman dynasty had a major political, cultural and military impact",
+            "probability": 0.0011239953494709006,
+            "start_logit": 0.590120255947113,
+            "end_logit": 5.182401657104492
+        },
+        {
+            "text": "cultural and military impact",
+            "probability": 0.0009615466387672011,
+            "start_logit": 0.43401843309402466,
+            "end_logit": 5.182401657104492
+        },
+        {
+            "text": "political, cultural and military impact on medieval Europe",
+            "probability": 0.0008917227354014348,
+            "start_logit": 5.6609272956848145,
+            "end_logit": -0.11989502608776093
+        },
+        {
+            "text": "military impact",
+            "probability": 0.0008893683577695518,
+            "start_logit": 0.3559868633747101,
+            "end_logit": 5.182401657104492
+        },
+        {
+            "text": "impact",
+            "probability": 0.0004474898383438996,
+            "start_logit": -0.3308708071708679,
+            "end_logit": 5.182401657104492
+        },
+        {
+            "text": "Norman dynasty had a major political, cultural and military impact",
+            "probability": 0.0004001585399346525,
+            "start_logit": -0.4426638185977936,
+            "end_logit": 5.182401657104492
+        },
+        {
+            "text": "had a major political, cultural and military",
+            "probability": 0.0002801748817836107,
+            "start_logit": -2.255814790725708,
+            "end_logit": 6.639105796813965
+        },
+        {
+            "text": "",
+            "probability": 0.00014259119797578723,
+            "start_logit": 1.5371179580688477,
+            "end_logit": 2.170740842819214
+        }
+    ],
+    "5ad3a266604f3c001a3fea28": [
+        {
+            "text": "",
+            "probability": 0.95616746024831,
+            "start_logit": 5.460186958312988,
+            "end_logit": 5.088991165161133
+        },
+        {
+            "text": "The Normans",
+            "probability": 0.03550595347593029,
+            "start_logit": 3.56278920173645,
+            "end_logit": 3.6931562423706055
+        },
+        {
+            "text": "Normans",
+            "probability": 0.0061485234559422956,
+            "start_logit": 1.8093007802963257,
+            "end_logit": 3.6931562423706055
+        },
+        {
+            "text": "The Norman dynasty had a major political, cultural and military impact on medieval Europe and even the Near East. The Normans",
+            "probability": 0.0009446423352426276,
+            "start_logit": -0.06386008858680725,
+            "end_logit": 3.6931562423706055
+        },
+        {
+            "text": "Norman dynasty had a major political, cultural and military impact on medieval Europe and even the Near East. The Normans",
+            "probability": 0.0007372484404400318,
+            "start_logit": -0.31174153089523315,
+            "end_logit": 3.6931562423706055
+        },
+        {
+            "text": "The Normans were famed for their martial spirit and eventually for their Christian piety",
+            "probability": 0.00011347523257411868,
+            "start_logit": 3.56278920173645,
+            "end_logit": -2.0527148246765137
+        },
+        {
+            "text": "The Normans were famed for their martial spirit and eventually for their Christian piety,",
+            "probability": 6.882669995938442e-05,
+            "start_logit": 3.56278920173645,
+            "end_logit": -2.5527076721191406
+        },
+        {
+            "text": "The Norman",
+            "probability": 6.461845140999694e-05,
+            "start_logit": 3.56278920173645,
+            "end_logit": -2.6157994270324707
+        },
+        {
+            "text": "The Norman dynasty",
+            "probability": 3.777040177502611e-05,
+            "start_logit": -0.06386008858680725,
+            "end_logit": 0.47387564182281494
+        },
+        {
+            "text": "The",
+            "probability": 3.774729371245431e-05,
+            "start_logit": 3.56278920173645,
+            "end_logit": -3.153385639190674
+        },
+        {
+            "text": "The Normans were famed for their martial spirit",
+            "probability": 3.264496533212993e-05,
+            "start_logit": 3.56278920173645,
+            "end_logit": -3.2986087799072266
+        },
+        {
+            "text": "Norman dynasty",
+            "probability": 2.947800322360021e-05,
+            "start_logit": -0.31174153089523315,
+            "end_logit": 0.47387564182281494
+        },
+        {
+            "text": "dynasty had a major political, cultural and military impact on medieval Europe and even the Near East. The Normans",
+            "probability": 2.2833090738619417e-05,
+            "start_logit": -3.7864556312561035,
+            "end_logit": 3.6931562423706055
+        },
+        {
+            "text": "The Normans were famed for their martial spirit and eventually for their Christian piety, becoming exponents of the Catholic orthodoxy",
+            "probability": 2.065165298166521e-05,
+            "start_logit": 3.56278920173645,
+            "end_logit": -3.7565040588378906
+        },
+        {
+            "text": "Normans were famed for their martial spirit and eventually for their Christian piety",
+            "probability": 1.9650370173088146e-05,
+            "start_logit": 1.8093007802963257,
+            "end_logit": -2.0527148246765137
+        },
+        {
+            "text": ". The Normans",
+            "probability": 1.5878830427042126e-05,
+            "start_logit": -4.149679660797119,
+            "end_logit": 3.6931562423706055
+        },
+        {
+            "text": "Normans were famed for their martial spirit and eventually for their Christian piety,",
+            "probability": 1.1918637233112353e-05,
+            "start_logit": 1.8093007802963257,
+            "end_logit": -2.5527076721191406
+        },
+        {
+            "text": "Norman",
+            "probability": 1.1189899869901295e-05,
+            "start_logit": 1.8093007802963257,
+            "end_logit": -2.6157994270324707
+        },
+        {
+            "text": "Normans were famed for their martial spirit",
+            "probability": 5.653089564235818e-06,
+            "start_logit": 1.8093007802963257,
+            "end_logit": -3.2986087799072266
+        },
+        {
+            "text": "The Normans were famed for their martial",
+            "probability": 3.835425160365977e-06,
+            "start_logit": 3.56278920173645,
+            "end_logit": -5.440019130706787
+        }
+    ],
+    "5ad3a266604f3c001a3fea29": [
+        {
+            "text": "",
+            "probability": 0.9999993965765221,
+            "start_logit": 7.717153549194336,
+            "end_logit": 7.838907718658447
+        },
+        {
+            "text": "The Normans",
+            "probability": 2.727514165601051e-07,
+            "start_logit": 0.48223134875297546,
+            "end_logit": -0.04087449610233307
+        },
+        {
+            "text": "Normans",
+            "probability": 1.268997830253359e-07,
+            "start_logit": -0.2829318046569824,
+            "end_logit": -0.04087449610233307
+        },
+        {
+            "text": "The Normans were famed for their martial spirit and eventually for their Christian piety, becoming exponents of the Catholic orthodoxy",
+            "probability": 4.6928021189914996e-08,
+            "start_logit": 0.48223134875297546,
+            "end_logit": -1.8008203506469727
+        },
+        {
+            "text": "The Norman dynasty had a major political, cultural and military impact on medieval Europe and even the Near East. The Normans",
+            "probability": 3.56423542015102e-08,
+            "start_logit": -1.5527948141098022,
+            "end_logit": -0.04087449610233307
+        },
+        {
+            "text": "Norman dynasty had a major political, cultural and military impact on medieval Europe and even the Near East. The Normans",
+            "probability": 3.0022660108025666e-08,
+            "start_logit": -1.7243770360946655,
+            "end_logit": -0.04087449610233307
+        },
+        {
+            "text": "Normans were famed for their martial spirit and eventually for their Christian piety, becoming exponents of the Catholic orthodoxy",
+            "probability": 2.1833638050038375e-08,
+            "start_logit": -0.2829318046569824,
+            "end_logit": -1.8008203506469727
+        },
+        {
+            "text": "The Norman",
+            "probability": 1.4293857329965603e-08,
+            "start_logit": 0.48223134875297546,
+            "end_logit": -2.98960542678833
+        },
+        {
+            "text": "The Normans were famed for their martial spirit and eventually for their Christian piety, becoming exponents of the Catholic",
+            "probability": 1.0919356676945346e-08,
+            "start_logit": 0.48223134875297546,
+            "end_logit": -3.2588982582092285
+        },
+        {
+            "text": "Norman",
+            "probability": 6.650331707325975e-09,
+            "start_logit": -0.2829318046569824,
+            "end_logit": -2.98960542678833
+        },
+        {
+            "text": "Catholic orthodoxy",
+            "probability": 5.933098614266125e-09,
+            "start_logit": -1.5858370065689087,
+            "end_logit": -1.8008203506469727
+        },
+        {
+            "text": "The Normans were famed for their martial spirit and eventually for their Christian piety",
+            "probability": 5.494108061181827e-09,
+            "start_logit": 0.48223134875297546,
+            "end_logit": -3.9457590579986572
+        },
+        {
+            "text": "Normans were famed for their martial spirit and eventually for their Christian piety, becoming exponents of the Catholic",
+            "probability": 5.080318227330871e-09,
+            "start_logit": -0.2829318046569824,
+            "end_logit": -3.2588982582092285
+        },
+        {
+            "text": "The",
+            "probability": 4.041717231263926e-09,
+            "start_logit": 0.48223134875297546,
+            "end_logit": -4.252765655517578
+        },
+        {
+            "text": "The Normans were famed for their martial spirit and eventually for their Christian",
+            "probability": 4.01539434025419e-09,
+            "start_logit": 0.48223134875297546,
+            "end_logit": -4.2592997550964355
+        },
+        {
+            "text": "The Norman dynasty",
+            "probability": 3.430842680993044e-09,
+            "start_logit": -1.5527948141098022,
+            "end_logit": -2.381603240966797
+        },
+        {
+            "text": "Norman dynasty",
+            "probability": 2.8899051704950893e-09,
+            "start_logit": -1.7243770360946655,
+            "end_logit": -2.381603240966797
+        },
+        {
+            "text": "Normans were famed for their martial spirit and eventually for their Christian piety",
+            "probability": 2.5561778181565676e-09,
+            "start_logit": -0.2829318046569824,
+            "end_logit": -3.9457590579986572
+        },
+        {
+            "text": "the Catholic orthodoxy",
+            "probability": 2.1406890706050443e-09,
+            "start_logit": -2.6052558422088623,
+            "end_logit": -1.8008203506469727
+        },
+        {
+            "text": "Catholic orthodoxy into which they assimilated. They adopted the Gallo-Romance language",
+            "probability": 1.899808591874047e-09,
+            "start_logit": -1.5858370065689087,
+            "end_logit": -2.9396138191223145
+        }
+    ],
+    "5ad3a266604f3c001a3fea2a": [
+        {
+            "text": "Richard I",
+            "probability": 0.8105862319268847,
+            "start_logit": 7.850681781768799,
+            "end_logit": 7.1164398193359375
+        },
+        {
+            "text": "Richard I of Normandy",
+            "probability": 0.18241034314417104,
+            "start_logit": 7.850681781768799,
+            "end_logit": 5.624940872192383
+        },
+        {
+            "text": "Richard",
+            "probability": 0.0018673317396590773,
+            "start_logit": 7.850681781768799,
+            "end_logit": 1.0431926250457764
+        },
+        {
+            "text": "Richard I of Normandy was forged into a cohesive and formidable principality in feudal tenure.",
+            "probability": 0.0017675591382134638,
+            "start_logit": 7.850681781768799,
+            "end_logit": 0.9882816672325134
+        },
+        {
+            "text": "the French crown, was a great fief of medieval France, and under Richard I",
+            "probability": 0.0007080786855119462,
+            "start_logit": 0.8077239990234375,
+            "end_logit": 7.1164398193359375
+        },
+        {
+            "text": "medieval France, and under Richard I",
+            "probability": 0.0006137467954878615,
+            "start_logit": 0.6647512316703796,
+            "end_logit": 7.1164398193359375
+        },
+        {
+            "text": "under Richard I",
+            "probability": 0.000285631771671944,
+            "start_logit": -0.10012775659561157,
+            "end_logit": 7.1164398193359375
+        },
+        {
+            "text": "The Duchy of Normandy, which they formed by treaty with the French crown, was a great fief of medieval France, and under Richard I",
+            "probability": 0.00027569776869739316,
+            "start_logit": -0.13552600145339966,
+            "end_logit": 7.1164398193359375
+        },
+        {
+            "text": "French crown, was a great fief of medieval France, and under Richard I",
+            "probability": 0.00026100041561361915,
+            "start_logit": -0.19030922651290894,
+            "end_logit": 7.1164398193359375
+        },
+        {
+            "text": "France, and under Richard I",
+            "probability": 0.00020790980417317303,
+            "start_logit": -0.41772687435150146,
+            "end_logit": 7.1164398193359375
+        },
+        {
+            "text": "I",
+            "probability": 0.00016980938570391088,
+            "start_logit": -0.6201546788215637,
+            "end_logit": 7.1164398193359375
+        },
+        {
+            "text": "the French crown, was a great fief of medieval France, and under Richard I of Normandy",
+            "probability": 0.00015934254852845568,
+            "start_logit": 0.8077239990234375,
+            "end_logit": 5.624940872192383
+        },
+        {
+            "text": "Richard I of",
+            "probability": 0.0001592535243214211,
+            "start_logit": 7.850681781768799,
+            "end_logit": -1.4185757637023926
+        },
+        {
+            "text": "medieval France, and under Richard I of Normandy",
+            "probability": 0.00013811456345914653,
+            "start_logit": 0.6647512316703796,
+            "end_logit": 5.624940872192383
+        },
+        {
+            "text": "Normandy, which they formed by treaty with the French crown, was a great fief of medieval France, and under Richard I",
+            "probability": 0.00010918734822130986,
+            "start_logit": -1.0617660284042358,
+            "end_logit": 7.1164398193359375
+        },
+        {
+            "text": "under Richard I of Normandy",
+            "probability": 6.427717056049931e-05,
+            "start_logit": -0.10012775659561157,
+            "end_logit": 5.624940872192383
+        },
+        {
+            "text": "The Duchy of Normandy, which they formed by treaty with the French crown, was a great fief of medieval France, and under Richard I of Normandy",
+            "probability": 6.204167133782501e-05,
+            "start_logit": -0.13552600145339966,
+            "end_logit": 5.624940872192383
+        },
+        {
+            "text": "French crown, was a great fief of medieval France, and under Richard I of Normandy",
+            "probability": 5.8734251209371505e-05,
+            "start_logit": -0.19030922651290894,
+            "end_logit": 5.624940872192383
+        },
+        {
+            "text": "they formed by treaty with the French crown, was a great fief of medieval France, and under Richard I",
+            "probability": 4.7883066704159735e-05,
+            "start_logit": -1.8860692977905273,
+            "end_logit": 7.1164398193359375
+        },
+        {
+            "text": "Duchy of Normandy, which they formed by treaty with the French crown, was a great fief of medieval France, and under Richard I",
+            "probability": 4.7124948191170476e-05,
+            "start_logit": -1.9020286798477173,
+            "end_logit": 7.1164398193359375
+        },
+        {
+            "text": "",
+            "probability": 7.003316783561128e-07,
+            "start_logit": 0.867216169834137,
+            "end_logit": 0.13819119334220886
+        }
+    ],
+    "5ad3a266604f3c001a3fea2b": [
+        {
+            "text": "Antioch",
+            "probability": 0.656861083026864,
+            "start_logit": 4.409292697906494,
+            "end_logit": 6.033671855926514
+        },
+        {
+            "text": "",
+            "probability": 0.1700288670653578,
+            "start_logit": 4.323047161102295,
+            "end_logit": 4.768413066864014
+        },
+        {
+            "text": "Principality of Antioch",
+            "probability": 0.14426863543249316,
+            "start_logit": 2.8934972286224365,
+            "end_logit": 6.033671855926514
+        },
+        {
+            "text": "the Principality of Antioch",
+            "probability": 0.026167646078510257,
+            "start_logit": 1.1863439083099365,
+            "end_logit": 6.033671855926514
+        },
+        {
+            "text": "of Antioch",
+            "probability": 0.0011205936630572795,
+            "start_logit": -1.964321255683899,
+            "end_logit": 6.033671855926514
+        },
+        {
+            "text": "Antioch in the Levant",
+            "probability": 0.0009142250565069954,
+            "start_logit": 4.409292697906494,
+            "end_logit": -0.5434792041778564
+        },
+        {
+            "text": "Principality of Antioch in the Levant",
+            "probability": 0.00020079436092130924,
+            "start_logit": 2.8934972286224365,
+            "end_logit": -0.5434792041778564
+        },
+        {
+            "text": "Antioch in the Levant, to Scotland and Wales in Great Britain, to Ireland, and to the coasts of north Africa and the Canary Islands.",
+            "probability": 0.00014077250508637848,
+            "start_logit": 4.409292697906494,
+            "end_logit": -2.4144108295440674
+        },
+        {
+            "text": "founded the Principality of Antioch",
+            "probability": 9.505074045912488e-05,
+            "start_logit": -4.431524276733398,
+            "end_logit": 6.033671855926514
+        },
+        {
+            "text": "Antioch in the Levant,",
+            "probability": 4.1346041350517317e-05,
+            "start_logit": 4.409292697906494,
+            "end_logit": -3.6395792961120605
+        },
+        {
+            "text": "the Principality of Antioch in the Levant",
+            "probability": 3.642036091488571e-05,
+            "start_logit": 1.1863439083099365,
+            "end_logit": -0.5434792041778564
+        },
+        {
+            "text": "Principality of Antioch in the Levant, to Scotland and Wales in Great Britain, to Ireland, and to the coasts of north Africa and the Canary Islands.",
+            "probability": 3.091834444147597e-05,
+            "start_logit": 2.8934972286224365,
+            "end_logit": -2.4144108295440674
+        },
+        {
+            "text": "Antioch in the Levant, to Scotland and Wales in Great Britain",
+            "probability": 2.71837892565604e-05,
+            "start_logit": 4.409292697906494,
+            "end_logit": -4.058935165405273
+        },
+        {
+            "text": "Antioch in the Levant, to Scotland and Wales in Great Britain, to Ireland, and to the coasts of north Africa and the Canary Islands",
+            "probability": 2.567523003533535e-05,
+            "start_logit": 4.409292697906494,
+            "end_logit": -4.116029262542725
+        },
+        {
+            "text": "Principality of Antioch in the Levant,",
+            "probability": 9.080971791916341e-06,
+            "start_logit": 2.8934972286224365,
+            "end_logit": -3.6395792961120605
+        },
+        {
+            "text": "Principality",
+            "probability": 8.097725150490713e-06,
+            "start_logit": 2.8934972286224365,
+            "end_logit": -3.7541773319244385
+        },
+        {
+            "text": "Duchy of Normandy",
+            "probability": 7.559188870523049e-06,
+            "start_logit": -0.28575068712234497,
+            "end_logit": -0.6437487006187439
+        },
+        {
+            "text": "Principality of Antioch in the Levant, to Scotland and Wales in Great Britain",
+            "probability": 5.9704681602640265e-06,
+            "start_logit": 2.8934972286224365,
+            "end_logit": -4.058935165405273
+        },
+        {
+            "text": "Principality of Antioch in the Levant, to Scotland and Wales in Great Britain, to Ireland, and to the coasts of north Africa and the Canary Islands",
+            "probability": 5.639138163802139e-06,
+            "start_logit": 2.8934972286224365,
+            "end_logit": -4.116029262542725
+        },
+        {
+            "text": "The Duchy of Normandy",
+            "probability": 4.440812607734838e-06,
+            "start_logit": -0.8176771998405457,
+            "end_logit": -0.6437487006187439
+        }
+    ]
+}
