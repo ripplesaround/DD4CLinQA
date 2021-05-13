@@ -23,7 +23,7 @@
 
 import os
 # notice 制定GPU
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 import time
 import argparse
 import glob

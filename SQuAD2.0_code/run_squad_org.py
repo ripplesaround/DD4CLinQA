@@ -15,13 +15,12 @@
 # limitations under the License.
 """ Finetuning the library models for question-answering on SQuAD (DistilBERT, Bert, XLM, XLNet)."""
 
-
-import argparse
-import glob
-import logging
 import os
 # notice gpu编号
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+import argparse
+import glob
+import logging
 
 import random
 import timeit
