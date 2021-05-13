@@ -1,4 +1,5 @@
 /re/bert-base-uncased_300/
 .idea
-/model
+/backstage
 /re/cached_train_model_300
+/transformers/
