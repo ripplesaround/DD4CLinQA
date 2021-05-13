@@ -53,10 +53,6 @@ def read_json(num = 0):
     )
     # print(type(a["data"][0]))
     data = data_sample(context=a["data"][num]["paragraphs"][0]["context"],qas=a["data"][num]["paragraphs"][0]["qas"])
-    # data.print_qa()
-    # print(data.context)
-    # print((a["data"][0]["paragraphs"][0]["context"]))
-    # print(a)
     print("读取文件 "+filename)
     f.close()
     return info,data
