@@ -162,7 +162,84 @@ def sys_exit():
     print("程序结束")
     sys.exit("0")
 
-# def check
+def show_ans1():
+    ans1 = Message(eval_page, text=data.question_answer[0][1], font=("Times New Roman", 13), bg="AliceBlue",
+                        width=400)
+    ans1.place(x=50, y=350)
+def show_ans2():
+    ans1 = Message(eval_page, text=data.question_answer[1][1], font=("Times New Roman", 13), bg="AliceBlue",
+                        width=400)
+    ans1.place(x=50, y=450)
+def show_ans3():
+    ans1 = Message(eval_page, text=data.question_answer[2][1], font=("Times New Roman", 13), bg="AliceBlue",
+                        width=400)
+    ans1.place(x=50, y=550)
+
+def train():
+    messagebox.showinfo(title='开始训练', message='开始训练')
+
+def eval_mode():
+    main_gui.withdraw()
+    global eval_page
+    eval_page = Tk()
+    eval_page.geometry('600x600')
+    eval_page.title('SQuAD2.0问答系统--测试模式')
+    title = Label(eval_page, text="测试信息", font=("楷体", 20))
+    title.place(x=240, y=10)
+
+    context = Message(eval_page, text=data.context, font=("Times New Roman", 13), bg="lightgreen", width=500)
+    context.place(x=50, y=50)
+
+    question1 = Message(eval_page, text=data.question_answer[0][0], font=("Times New Roman", 13), bg="PaleVioletRed", width=400)
+    question1.place(x=50,y=300)
+    question1_bt = Button(eval_page, text='回答', command=show_ans1)
+    question1_bt.place(x=470, y=300)
+    question2 = Message(eval_page, text=data.question_answer[1][0], font=("Times New Roman", 13), bg="PaleVioletRed", width=400)
+    question2.place(x=50, y=400)
+    question1_bt = Button(eval_page, text='回答', command=show_ans2)
+    question1_bt.place(x=470, y=400)
+    question3 = Message(eval_page, text=data.question_answer[2][0], font=("Times New Roman", 13), bg="PaleVioletRed", width=400)
+    question3.place(x=50, y=500)
+    question1_bt = Button(eval_page, text='回答', command=show_ans3)
+    question1_bt.place(x=470, y=500)
+
+    exit_bt = Button(eval_page, text='退出', command=sys_exit)
+    exit_bt.place(x=550, y=550)
+
+    eval_page.mainloop()
+
+def train_deploy():
+    main_gui.withdraw()
+    global train_para
+    train_para = Tk()
+    train_para.geometry('260x260')
+    train_para.title('SQuAD2.0问答系统--训练部署')
+    Label(train_para, text="模型参数", font=("楷体", 20)).grid(row=0, column=0, columnspan=2)
+    Label(train_para, text="模型名称：", font=("楷体", 14)).grid(row=1, column=0)
+    name = Entry(train_para)
+    name.grid(row=1, column=1)
+    Label(train_para, text="数据集： ", font=("楷体", 14)).grid(row=2, column=0)
+    dataset_name = Entry(train_para)
+    dataset_name.grid(row=2, column=1)
+    Label(train_para, text="batch size: ", font=("Times New Roman", 14)).grid(row=3, column=0)
+    batah_size = Entry(train_para)
+    batah_size.grid(row=3, column=1)
+    Label(train_para, text="epoch: ", font=("Times New Roman", 14)).grid(row=4, column=0)
+    epoch= Entry(train_para)
+    epoch.grid(row=4, column=1)
+    Label(train_para, text="lr: ", font=("Times New Roman", 14)).grid(row=5, column=0)
+    lr = Entry(train_para)
+    lr.grid(row=5, column=1)
+    Label(train_para, text="output dir: ", font=("Times New Roman", 14)).grid(row=6, column=0)
+    output_dir = Entry(train_para)
+    output_dir.grid(row=6, column=1)
+
+    train_bt = Button(train_para, text='确认', command=train)
+    train_bt.place(x=150, y=220)
+    exit_bt = Button( train_para, text='退出', command=sys_exit)
+    exit_bt.place(x=220, y=220)
+    train_para.mainloop()
+
 
 def display():
     main_gui.withdraw()
@@ -170,13 +247,12 @@ def display():
     data_info_display = Tk()
     # 设计窗口大小
     data_info_display.geometry('600x400')
-    data_info_display.title('SQuAD20问答系统--后台数据集信息展示')
+    data_info_display.title('SQuAD2.0问答系统--后台数据集信息展示')
     title = Label(data_info_display, text="后台数据集信息展示", font=("楷体", 20))
     title.place(x=130, y=100)
     exit_bt = Button(data_info_display, text='退出', command=sys_exit)
     exit_bt.place(x=550, y=350)
 
-    info, data = read_json()
     item = Label(data_info_display, text=("数据集名称: "+info.filename), font=("楷体", 12))
     item.place(x=100, y=170)
     item1 = Label(data_info_display, text=("数据集路径: "+info.path), font=("楷体", 12))
@@ -184,24 +260,22 @@ def display():
     item2 = Label(data_info_display, text=("数据集包含了 {num} 个元素".format(num=info.dataset_num)), font=("楷体", 12))
     item2.place(x=100, y=270)
     # 插入信息
-
-
     data_info_display.mainloop()
 
 def menu():
     login.withdraw()
     global main_gui
     main_gui = Tk()
-    info,data = read_json()
+    # info,data = read_json()
     main_gui.title('SQuAD2.0问答系统--主界面')
     # 设计窗口大小
     main_gui.geometry('600x400')
-    title = Label(main_gui, text="SQuAD20问答系统--主界面", font=("楷体", 20))
+    title = Label(main_gui, text="SQuAD2.0问答系统--主界面", font=("楷体", 20))
     title.place(x=130,y=100)
     # Label(main_gui, text="退出").grid(row=0, column=0, columnspan=2)
-    bt1 = Button(main_gui, text='训练模式', command=sys_exit,height = 5, width = 15)
+    bt1 = Button(main_gui, text='训练模式', command=train_deploy,height = 5, width = 15)
     bt1.place(x=50, y=190)
-    bt2 = Button(main_gui, text='测试模式', command=sys_exit,height = 5,
+    bt2 = Button(main_gui, text='测试模式', command=eval_mode,height = 5,
           width = 15)
     bt2.place(x=250, y=190)
     bt3 = Button(main_gui, text='查看数据集信息', command=display,height = 5,
@@ -216,6 +290,8 @@ def menu():
 
 
 if __name__ == "__main__":
+    global info,data
+    info, data = read_json()
     login = Tk()
     # main_gui = Tk()
 
@@ -234,6 +310,8 @@ if __name__ == "__main__":
     # Button(login, text='发送验证码').grid(row=4, column=0, columnspan=3)
     Button(login, text='登录', command=successful).grid(row=5, column=0, columnspan=3)
     Button(login, text='注册', command=registereds).grid(row=6, column=0, columnspan=3)
+    exit_bt = Button(login, text='退出', command=sys_exit)
+    exit_bt.place(x=170, y=160)
     login.mainloop()
 
 
