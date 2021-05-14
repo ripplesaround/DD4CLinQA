@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """ Finetuning the library models for question-answering on SQuAD (DistilBERT, Bert, XLM, XLNet)."""
-
+import json
 import os
 # notice gpu编号
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
@@ -833,6 +833,10 @@ def main():
             results.update(result)
 
     logger.info("Results: {}".format(results))
+    # 将结果写入文件中
+    result_file = os.path.join(args.output_dir, "_{name}.json".format(name = "result"))
+    with open(result_file, 'w') as f:
+        json.dump(results, f)
 
     return results
 
