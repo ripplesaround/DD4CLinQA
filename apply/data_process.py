@@ -1,12 +1,12 @@
 # coding=utf-8
 
-'''
+"""
 Author: ripples
 Email: ripplesaround@sina.com
 
 date: 2021/5/13 12:31
 desc:
-'''
+"""
 import json
 import os
 
@@ -23,7 +23,7 @@ class dataset_info():
 
 class data_sample():
     def __init__(self,context,qas):
-        self.question_answer = []
+        self.question_answer_id = []
         self.context = context
         self.qas = qas
         self.process()
@@ -32,15 +32,15 @@ class data_sample():
             if self.qas[i]["is_impossible"]:
                 # print("hello")
                 continue
-            # 一个问题，四个回答
+            # 一个问题，四个回答，一个id
             temp=[]
             temp.append(self.qas[i]["question"])
             for j in range(len(self.qas[i]["answers"])):
                 temp.append(self.qas[i]["answers"][j]["text"])
             temp.append(self.qas[i]["id"])
-            self.question_answer.append(temp)
+            self.question_answer_id.append(temp)
     def print_qa(self):
-        print(self.question_answer)
+        print(self.question_answer_id)
 class data_process():
     def __init__(self):
         print("初始化data_process")

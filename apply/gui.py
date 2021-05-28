@@ -343,25 +343,25 @@ def sys_exit():
 
 
 def show_ans1():
-    ans1 = Message(eval_page, text=data_ans.question_answer[0][1], font=("Times New Roman", 13), bg="AliceBlue",
+    ans1 = Message(eval_page, text=data_ans.question_answer_id[0][1], font=("Times New Roman", 13), bg="AliceBlue",
                    width=400)
     ans1.place(x=50, y=360)
 
 
 def show_ans2():
-    ans1 = Message(eval_page, text=data_ans.question_answer[1][1], font=("Times New Roman", 13), bg="AliceBlue",
+    ans1 = Message(eval_page, text=data_ans.question_answer_id[1][1], font=("Times New Roman", 13), bg="AliceBlue",
                    width=400)
     ans1.place(x=50, y=460)
 
 
 def show_ans3():
-    ans1 = Message(eval_page, text=data_ans.question_answer[2][1], font=("Times New Roman", 13), bg="AliceBlue",
+    ans1 = Message(eval_page, text=data_ans.question_answer_id[2][1], font=("Times New Roman", 13), bg="AliceBlue",
                    width=400)
     ans1.place(x=50, y=560)
 
 
 def check_pred1():
-    id = data_ans.question_answer[0][-1]
+    id = data_ans.question_answer_id[0][-1]
     # [0]是预测值最高的
     res = data_pred[id]
     pred1 = Message(eval_page, text=res, font=("Times New Roman", 13), bg="CornflowerBlue",
@@ -370,7 +370,7 @@ def check_pred1():
 
 
 def check_pred2():
-    id = data_ans.question_answer[1][-1]
+    id = data_ans.question_answer_id[1][-1]
     # [0]是预测值最高的
     res = data_pred[id]
     pred2 = Message(eval_page, text=res, font=("Times New Roman", 13), bg="CornflowerBlue",
@@ -379,7 +379,7 @@ def check_pred2():
 
 
 def check_pred3():
-    id = data_ans.question_answer[2][-1]
+    id = data_ans.question_answer_id[2][-1]
     # [0]是预测值最高的
     res = data_pred[id]
     pred3 = Message(eval_page, text=res, font=("Times New Roman", 13), bg="CornflowerBlue",
@@ -400,21 +400,21 @@ def eval_mode():
     context = Message(eval_page, text=data_ans.context, font=("Times New Roman", 13), bg="lightgreen", width=500)
     context.place(x=50, y=50)
 
-    question1 = Message(eval_page, text=data_ans.question_answer[0][0], font=("Times New Roman", 13),
+    question1 = Message(eval_page, text=data_ans.question_answer_id[0][0], font=("Times New Roman", 13),
                         bg="PaleVioletRed", width=400)
     question1.place(x=50, y=300)
     pred1_bt = Button(eval_page, text='预测', command=check_pred1)
     pred1_bt.place(x=470, y=300)
     question1_bt = Button(eval_page, text='标答', command=show_ans1)
     question1_bt.place(x=520, y=300)
-    question2 = Message(eval_page, text=data_ans.question_answer[1][0], font=("Times New Roman", 13),
+    question2 = Message(eval_page, text=data_ans.question_answer_id[1][0], font=("Times New Roman", 13),
                         bg="PaleVioletRed", width=400)
     question2.place(x=50, y=400)
     pred2_bt = Button(eval_page, text='预测', command=check_pred2)
     pred2_bt.place(x=470, y=400)
     question2_bt = Button(eval_page, text='标答', command=show_ans2)
     question2_bt.place(x=520, y=400)
-    question3 = Message(eval_page, text=data_ans.question_answer[2][0], font=("Times New Roman", 13),
+    question3 = Message(eval_page, text=data_ans.question_answer_id[2][0], font=("Times New Roman", 13),
                         bg="PaleVioletRed", width=400)
     question3.place(x=50, y=500)
     pred3_bt = Button(eval_page, text='预测', command=check_pred3)

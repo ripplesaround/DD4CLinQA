@@ -20,7 +20,7 @@ import time
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 import copy
-from Trianer_CL.Trainer_CL import Trainer_CL
+from Trainer_CL.Trainer_CL import Trainer_CL
 
 # notice 制定GPU
 
