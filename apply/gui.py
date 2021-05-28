@@ -15,6 +15,7 @@ from data_process import *
 
 # 判断用户是否在用户信息.xls文件中
 import data_process
+import socket
 
 
 class server:
@@ -28,6 +29,14 @@ class server:
 
     def find_model(self):
         return self.train_model[self.cnt - 1]
+
+    def print_cmd(self):
+        cmd = "train_model "
+        cmd += str(self.cnt - 1)
+        cmd += " "
+        # train最新的model
+        cmd += self.train_model[self.cnt - 1].print_cmd()
+        return cmd
 
 
 server_gui = server()
@@ -178,6 +187,9 @@ class User:
         #     messagebox.showerror(title='wrong',message='验证码应为4位')
         else:
             messagebox.showinfo(title='successful', message='登录成功')
+            msg = '用户 %s 登录成功' % name.get()
+            s.send(msg.encode('utf-8'))
+            print("send len is : [%d]" % len(msg))
             menu()
 
 
@@ -189,6 +201,10 @@ class model:
         self.epoch = epoch
         self.lr = lr
         self.output_dir = output_dir
+
+    def print_cmd(self):
+        return self.name + "?" + self.dataset_name + "?" + str(self.batch_size) + "?" + str(
+            self.epoch) + "?" + self.lr + "?" + self.output_dir
 
 
 def isInExcel(data):
@@ -264,7 +280,12 @@ def successful():
     # elif len(verifyCode.get())!=4:
     #     messagebox.showerror(title='wrong',message='验证码应为4位')
     else:
+        msg = '用户{%s}登录成功' % name.get()
+        s.send(msg.encode('utf-8'))
+        print("send len is : [%d]" % len(msg))
         messagebox.showinfo(title='successful', message='登录成功')
+        # 登陆成功，发送给服务器
+
         menu()
 
 
@@ -339,6 +360,10 @@ def registereds():
 
 def sys_exit():
     print("程序结束")
+    msg = 'disconnect'
+    # print("total send times is : %d " % receive_count)
+    s.send(msg.encode('utf-8'))
+    s.close()
     sys.exit("0")
 
 
@@ -388,6 +413,9 @@ def check_pred3():
 
 
 def eval_mode():
+    msg = '进入测试模式'
+    s.send(msg.encode('utf-8'))
+    print("send len is : [%d]" % len(msg))
     # data_pred
     main_gui.withdraw()
     global eval_page
@@ -429,6 +457,9 @@ def eval_mode():
 
 
 def train_deploy():
+    msg = '进入训练模式'
+    s.send(msg.encode('utf-8'))
+    print("send len is : [%d]" % len(msg))
     main_gui.withdraw()
     global train_para
     train_para = Tk()
@@ -461,6 +492,9 @@ def train_deploy():
                                       epoch=int(epoch.get()),
                                       lr=lr.get(),
                                       output_dir=output_dir.get()))
+        msg = server_gui.print_cmd()
+        s.send(msg.encode('utf-8'))
+        print("send len is : [%d]" % len(msg))
         trainandshow()
 
     train_bt = Button(train_para, text='确认', command=check_input)
@@ -471,6 +505,9 @@ def train_deploy():
 
 
 def trainandshow():
+    msg = '展示训练结果'
+    s.send(msg.encode('utf-8'))
+    print("send len is : [%d]" % len(msg))
     messagebox.showinfo(title='开始训练', message='开始训练')
     train_para.withdraw()
     global train_show
@@ -486,9 +523,11 @@ def trainandshow():
     item.place(x=100, y=100)
     item1 = Label(train_show, text=("存储路径: " + model_para.output_dir), font=("楷体", 12), bg="LightGreen")
     item1.place(x=100, y=120)
-    item2 = Label(train_show, text=("数据集名称： {num}".format(num=model_para.dataset_name)), font=("楷体", 12), bg="LightGreen")
+    item2 = Label(train_show, text=("数据集名称： {num}".format(num=model_para.dataset_name)), font=("楷体", 12),
+                  bg="LightGreen")
     item2.place(x=100, y=140)
-    item3 = Label(train_show, text=("batch_size： {num}".format(num=model_para.batch_size)), font=("楷体", 12), bg="LightGreen")
+    item3 = Label(train_show, text=("batch_size： {num}".format(num=model_para.batch_size)), font=("楷体", 12),
+                  bg="LightGreen")
     item3.place(x=100, y=160)
     item3 = Label(train_show, text=("epoch： {num}".format(num=model_para.epoch)), font=("楷体", 12), bg="LightGreen")
     item3.place(x=100, y=180)
@@ -501,7 +540,8 @@ def trainandshow():
     res1.place(x=100, y=250)
     res2 = Label(train_show, text=("F1 score： {num}".format(num=result["f1"])), font=("楷体", 12), bg="Wheat")
     res2.place(x=100, y=270)
-    res3 = Label(train_show, text=("HasAns_exact： {num}".format(num=result["HasAns_exact"])), font=("楷体", 12), bg="Wheat")
+    res3 = Label(train_show, text=("HasAns_exact： {num}".format(num=result["HasAns_exact"])), font=("楷体", 12),
+                 bg="Wheat")
     res3.place(x=100, y=290)
     res4 = Label(train_show, text=("HasAns_f1： {num}".format(num=result["HasAns_f1"])), font=("楷体", 12),
                  bg="Wheat")
@@ -513,11 +553,11 @@ def trainandshow():
                  bg="Wheat")
     res6.place(x=100, y=350)
 
-
     exit_bt = Button(train_show, text='退出', command=sys_exit)
     exit_bt.place(x=350, y=400)
 
     train_show.mainloop()
+
 
 def display():
     main_gui.withdraw()
@@ -569,7 +609,23 @@ def menu():
 
 
 if __name__ == "__main__":
-    global info, data_ans, data_pred
+    # 启动客户端
+    global s, info, data_ans, data_pred
+    ip = '127.0.0.1'
+    port = 6000
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    failed_count = 0
+    while True:
+        try:
+            print("start connect to server ")
+            s.connect((ip, port))
+            break
+        except socket.error:
+            failed_count += 1
+            print("fail to connect to server %d times" % failed_count)
+            if failed_count == 100:
+                sys.exit(-11)
+
     read_data = data_process.data_process()
     info, data_ans, data_pred = read_data.read_json()
     login = Tk()
@@ -594,3 +650,4 @@ if __name__ == "__main__":
     exit_bt = Button(login, text='退出', command=sys_exit)
     exit_bt.place(x=170, y=160)
     login.mainloop()
+    s.close()
