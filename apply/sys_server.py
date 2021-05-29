@@ -13,6 +13,8 @@ import sys
 import os
 import struct
 
+import xlrd
+
 SEND_BUF_SIZE = 256
 
 RECV_BUF_SIZE = 256
@@ -21,6 +23,65 @@ Communication_Count: int = 0
 
 receive_count: int = 0
 
+def isInExcel(data):
+    filename = "user_info.xls"
+    excel = xlrd.open_workbook(filename, encoding_override="utf-8")
+    sheet = excel.sheets()[0]
+
+    sheet_row_mount = sheet.nrows  # 行数
+    sheet_col_mount = sheet.ncols  # 列数
+
+    sheet_name = []
+    # 所有用户名信息
+    for x in range(1, sheet_row_mount):
+        y = 0
+        sheet_name.append(sheet.cell_value(x, y))
+
+    for x in sheet_name:
+        # 找到用户名
+        if (data == x):
+            # 已有用户
+            return 1
+            break;
+    # 未注册用户
+    return -1
+
+# 用户存在时，判断密码是否正确
+def isPasswordDirect(data, passWord):
+    filename = "user_info.xls"
+    excel = xlrd.open_workbook(filename, encoding_override="utf-8")
+    sheet = excel.sheets()[0]
+
+    sheet_row_mount = sheet.nrows  # 行数
+    sheet_col_mount = sheet.ncols  # 列数
+
+    sheet_name = []
+    # 所有用户名信息
+    for x in range(1, sheet_row_mount):
+        y = 0
+        sheet_name.append(sheet.cell_value(x, y))
+    sheet_passWord = []
+    # 所有密码信息
+    for x in range(1, sheet_row_mount):
+        y = 1
+        sheet_passWord.append(sheet.cell_value(x, y))
+
+    for i in range(len(sheet_name)):
+        if (data == sheet_name[i]):
+            # 记录用户名在数组中的位置
+            record = i
+            break
+
+    for i in range(len(sheet_passWord)):
+        if (passWord == sheet_passWord[i]):
+            # 判断用户名位置与密码位置是否相同
+            # 以及密码是否与用户信息中的密码一致
+            if (i == record):
+                # 密码正确
+                return 1
+                break
+    # 密码错误
+    return -1
 
 def start_tcp_server(ip, port):
     # create socket
@@ -73,25 +134,32 @@ def start_tcp_server(ip, port):
         if msg_de == 'disconnect':
             break
 
-        train_cmd = msg_de.split(" ")
-        if train_cmd[0] == "train_model":
+        client_cmd = msg_de.split(" ")
+        if client_cmd[0] == "login":
+            print("登录验证")
+            msg = str(isInExcel(client_cmd[1])) + " "+ str(isPasswordDirect(client_cmd[1], client_cmd[2]))
+            client.send(msg.encode('utf-8'))
+            receive_count += 1
+            print("send len is : [%d]" % len(msg))
+
+        elif client_cmd[0] == "train_model":
             print("开始训练")
-            train_cmd = train_cmd[-1].split("?")
+            client_cmd = client_cmd[-1].split("?")
             python_path = "/home/fwx/anaconda3/envs/py37/bin/python3.7 "
             train_file_path = "/home/fwx/project/dd_2020/SQuAD_v2/run_qa.py "
-            dataset_name = "--dataset_name " + train_cmd[1]
-            batch_size = " --per_device_train_batch_size "+train_cmd[2]
-            epoch = " --num_train_epochs "+train_cmd[3]
-            lr = " --learning_rate "+train_cmd[4]
-            output_dir = " --output_dir " + train_cmd[5]
+            dataset_name = "--dataset_name " + client_cmd[1]
+            batch_size = " --per_device_train_batch_size "+client_cmd[2]
+            epoch = " --num_train_epochs "+client_cmd[3]
+            lr = " --learning_rate "+client_cmd[4]
+            output_dir = " --output_dir " + client_cmd[5]
             max_seq_length_and_doc_stride = " --max_seq_length 384 --doc_stride 128"
 
             basic_para = "--model_name_or_path bert-base-uncased " + dataset_name + " --do_train --do_eval --version_2_with_negative"
             basic_para += (lr+epoch+max_seq_length_and_doc_stride+output_dir+batch_size)
-            train_cmd = python_path + train_file_path + basic_para
-            print(train_cmd)
+            client_cmd = python_path + train_file_path + basic_para
+            print(client_cmd)
 
-            os.system(train_cmd)
+            os.system(client_cmd)
             # 参数实例
             # --model_name_or_path
             # bert - base - uncased
@@ -127,4 +195,5 @@ def start_tcp_server(ip, port):
 
 
 if __name__ == '__main__':
-    start_tcp_server('127.0.0.1', 6000)
+    ip = '127.0.0.1'
+    start_tcp_server(ip, 6000)

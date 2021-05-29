@@ -177,10 +177,18 @@ class User:
 
     def successful(self):
         # 判断用户名不存在
-        if isInExcel(self.name.get()) == -1:
+        msg = 'login %s' % (name.get() +" "+ passWord.get())
+        s.send(msg.encode('utf-8'))
+        # 接收服务器传回的判断结果
+        msg = s.recv(1024)
+        result = msg.decode('utf-8').split(" ")
+        result_isinexcel = result[0]
+        result_ispassworddirect = result[-1]
+
+        if result_isinexcel == -1:
             messagebox.showerror(title='wrong', message='用户不存在，请注册')
         # 密码不正确
-        elif isPasswordDirect(self.name.get(), self.passWord.get()) == -1:
+        elif result_ispassworddirect == -1:
             messagebox.showerror(title='wrong', message='密码不正确')
         # # 验证码位数不正确
         # elif len(verifyCode.get())!=4:
@@ -268,25 +276,6 @@ def isPasswordDirect(data, passWord):
     # 密码错误
     return -1
 
-
-def successful():
-    # 判断用户名不存在
-    if isInExcel(name.get()) == -1:
-        messagebox.showerror(title='wrong', message='用户不存在，请注册')
-    # 密码不正确
-    elif isPasswordDirect(name.get(), passWord.get()) == -1:
-        messagebox.showerror(title='wrong', message='密码不正确')
-    # # 验证码位数不正确
-    # elif len(verifyCode.get())!=4:
-    #     messagebox.showerror(title='wrong',message='验证码应为4位')
-    else:
-        msg = '用户{%s}登录成功' % name.get()
-        s.send(msg.encode('utf-8'))
-        print("send len is : [%d]" % len(msg))
-        messagebox.showinfo(title='successful', message='登录成功')
-        # 登陆成功，发送给服务器
-
-        menu()
 
 
 # 设计用户注册GUI界面
@@ -612,6 +601,7 @@ if __name__ == "__main__":
     # 启动客户端
     global s, info, data_ans, data_pred
     ip = '127.0.0.1'
+    # ip = "10.1.114.125"
     port = 6000
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     failed_count = 0
