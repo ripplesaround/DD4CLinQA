@@ -28,7 +28,7 @@ from typing import Optional
 
 import numpy as np
 from datasets import ClassLabel, load_dataset, load_metric
-
+import random
 import transformers
 from transformers import (
     AutoConfig,
@@ -43,8 +43,14 @@ from transformers import (
 )
 from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils import check_min_version
-
-
+import torch.nn as nn
+import torch.nn.functional as F
+from tqdm import tqdm
+import pyarrow as pa
+from geomloss import SamplesLoss
+import torch
+from datasets.arrow_dataset import update_metadata_with_features
+import copy
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
 # check_min_version("4.7.0.dev0")
 
@@ -172,6 +178,232 @@ class DataTrainingArguments:
                 extension = self.validation_file.split(".")[-1]
                 assert extension in ["csv", "json"], "`validation_file` should be a csv or a json file."
         self.task_name = self.task_name.lower()
+
+def DE_random(data_args,training_args, train_dataset):
+    logger.info("***随机划分***")
+    # subset_quantity = data_args.div_subset
+    # n_train = len(train_dataset)
+    # split = n_train // subset_quantity
+    # indices = list(range(n_train))
+    # random.shuffle(indices)
+    # train_sampler = []
+    # # 1,12,123
+    # temp = []
+    # for i in range(subset_quantity - 1):
+    #     temp = []
+    #     for j in range(i + 1):
+    #         temp += indices[j * split: j * split + int(1 / 3 * split)]
+    #     train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(temp))
+    # train_sampler.append(torch.utils.data.sampler.SubsetRandomSampler(
+    #     temp + indices[(subset_quantity - 1) * split: (subset_quantity - 1) * split + int(1 / 3 * split)])
+    # )
+    #
+    # # 1 2 3
+    # # for i in range(subset_quantity):
+    # #     train_sampler.append(indices[i * split: i * split + int(1 / 3 * split)])
+    #
+    # result = []
+    # for i in range(subset_quantity):
+    #     result.append(DataLoader(train_dataset, sampler=train_sampler[i], batch_size=training_args.per_device_train_batch_size))
+
+    subset_quantity = data_args.div_subset
+    n_train = len(train_dataset)
+    split = n_train // subset_quantity
+    indices = list(range(n_train))
+    random.shuffle(indices)
+    result = []
+    for i in range(data_args.div_subset):
+        result.append(train_dataset.select(indices[i * split: i * split + int(1 / 3 * split)]))
+        logger.info("第 %s 个subset的长度： %s",i,len((result[i])))
+
+    # data_len = int(len(train_dataset) / data_args.div_subset)
+    # result = random_split(train_dataset, [data_len,data_len, (len(train_dataset)-2*data_len) ], generator=torch.Generator().manual_seed(training_args.seed))
+    # result[2] =  result[2].select(range(data_len))
+
+    logger.info("***随机划分完成***")
+    return result
+
+def cal_diff(x, y, norm="org", criterion ="wd" ):
+    if norm == "softmax":
+        x = F.softmax(x)
+        y = F.softmax(y)
+    elif norm == "logsoftmax":
+        x = F.log_softmax(x)
+        y = F.log_softmax(y)
+    elif norm == "line":
+        # logger.info("使用线性归一化")
+        x = linear_normalization(x)
+        y = linear_normalization(y)
+    elif norm == "Gaussian":
+        z = 1
+        # 实现高斯分布
+        # transform_BZ = transforms.Normalize(
+        #     mean=[0.5, 0.5, 0.5],  # 取决于数据集
+        #     std=[0.5, 0.5, 0.5]
+        # )
+        # logger.info("使用高斯分布归一化")
+
+    # 每个batch一起算
+    # KLloss = criterion(x, y)
+    # return KLloss.item()
+
+    # 每个batch 内单独算，最后算一个和
+    dim0 = x.shape[0]
+    result = 0.0
+    blur = .05
+    OT_solver = SamplesLoss("sinkhorn", p=2, blur=blur,
+                            scaling=.9, debias=False, potentials=True)
+    for i in range(dim0):
+        if criterion == "kl":
+            criterion_kl = nn.KLDivLoss()
+            # notice 考虑了KL的不对称性
+            KLloss = (criterion_kl(x[i], y[i])+criterion_kl(y[i], x[i]))/2
+            result += KLloss.item()
+        else:
+            # change wgan
+            F_i, G_j = OT_solver(x[i], y[i])
+            # # print("F_i ",torch.sum(F_i).item())
+            result += (torch.sum(F_i).item())
+            # print("hi")
+    return result / dim0
+
+def linear_normalization(x):
+    temp_min = torch.min(x)
+    temp_max = torch.max(x)
+    x = (x-temp_min)/(temp_max-temp_min)
+    return x
+
+def change_dataset(temp_dataset, add_column="idx"):
+    """
+    为数据集增加列
+    :param dataset: 一般为训练数据集，用作划分
+    :param add_column: 增加的列的名称
+    :return: 增加idx后的数据集
+    """
+    logger.info("开始为数据集添加 "+ add_column)
+    add_dataset = copy.deepcopy(temp_dataset)
+    logger.info("添加前的列： " + " ".join(add_dataset.column_names))
+    print(len(add_dataset))
+    print(add_dataset._info.features)
+    # print(add_dataset[20])
+    # add_info = np.array(range(len(add_dataset)))
+    add_info = pa.array(range(len(add_dataset)))
+    # add_info = "test"
+    add_dataset._data = add_dataset._data.append_column("idx",add_info)
+    # dataset._data = update_metadata_with_features(dataset._data, self.features)
+    # print(add_dataset._info.features)
+    add_dataset._data = update_metadata_with_features(add_dataset._data, add_dataset._info.features)
+    logger.info("添加后的列： " + " ".join(add_dataset.column_names))
+    print(len(add_dataset))
+    # print(add_dataset[10])
+    # print("hee")
+    return add_dataset
+
+def DE(trainer,train_dataset,training_args,data_args):
+    logger.info("***难度评估开始***")
+    total_train_dataloader = trainer.get_train_dataloader()
+    for i,item in enumerate(total_train_dataloader):
+        print(item)
+        if i>0:
+            break
+    print("--------")
+    for i,item in enumerate(total_train_dataloader.sampler):
+        print(item)
+        if i>0:
+            break
+
+    difficult_result = []
+    # notice 划分方法
+    method = "org"
+    criterion = "wd"
+    logger.info("划分方法 " + method + "   " + criterion)
+    cnt=0
+    for inputs in tqdm(total_train_dataloader):
+        # inputs = inputs.to(training_args.device)
+        # print(inputs)
+        # print(inputs["idx"].tolist())
+        idx = inputs.pop("idx")
+        # sentences = inputs.pop("sentence")
+        for key in inputs:
+            inputs[key] = inputs[key].to(training_args.device)
+        output = trainer.compute_loss(
+            model=trainer.model,
+            inputs=inputs,
+            return_outputs=True
+        )
+
+
+
+        # output 为 QuestionAnsweringModelOutput
+        # https://huggingface.co/transformers/main_classes/output.html#transformers.modeling_outputs.QuestionAnsweringModelOutput
+        # 和之前的不一样
+        # print(type(output[1]))
+        # print(len(output[1]))
+        # print(len(output[1].hidden_states))
+        # print(output[1].hidden_states[0].shape)
+        # print(output[1].__dir__())
+        # print(output[1])
+        # print(output[1].encoder_hidden_states)
+        # print(output[1].encoder_hidden_states.shape)
+        # print(output.encoder_hidden_states[0].shape)
+        # print("output[1].shape: ",output[1].shape )
+        # print("output[1][2].shape: ", output[1][2].shape)
+        # print("output[1][2][-1].shape: ", output[8][0].shape)
+        difficult_result.append(cal_diff(output[1].hidden_states[0],output[1].hidden_states[-1],norm = method,criterion=criterion))
+        # cnt +=1
+        # if cnt>1:
+        #     sys.exit(100)
+
+    difficult_result = np.array(difficult_result)
+    logger.info("dic len {len1}".format(len1=len(difficult_result)))
+
+    difficult_result_max = max(difficult_result)
+    difficult_result_min = min(difficult_result)
+    gap = difficult_result_max - difficult_result_min
+
+    subset = []
+    total_len = 0
+    for i in range(data_args.div_subset):
+        subset.append([])
+    # 拿到idx为了后续的划分
+    for i, batch in enumerate(total_train_dataloader):
+        if difficult_result[i] == difficult_result_max:
+            subset[-1] += batch["idx"].tolist()
+            total_len += len(batch["idx"].tolist())
+            continue
+        level = int(data_args.div_subset * (difficult_result[i] - difficult_result_min) / gap)
+        subset[level] += batch["idx"].tolist()
+        total_len += len(batch["idx"].tolist())
+        # print("batch")
+        # print(batch["idx"].tolist())
+        # if i>15:
+        #     break
+    # 不能直接用squad中的方法，因为这里需要返回的不是一个dataloader的合集，而是一个dataset的合集
+    # 所以必须要用 idx
+    print("total_len {e}".format(e = total_len))
+    # for i in range(data_args.div_subset):
+    #     print(subset[i])
+
+    # notice 进行采样
+    # 模拟退火
+    dd = []
+    threshold = ((total_len) * data_args.div_subset) // training_args.per_device_train_batch_size
+    for i in range(data_args.div_subset):
+        #数据蒸馏部分
+        if len(subset[i]) > threshold:
+            sample_num = ((len(subset[i])) // data_args.div_subset)
+        else:
+            sample_num = (len(subset[i]))
+        #课程安排
+        dd += random.sample(subset[i],sample_num)
+        subset[i] = train_dataset.select(dd)
+        print(len(subset[i]))
+
+    logger.info("***难度评估结束***")
+
+    # notice 释放缓存
+    torch.cuda.empty_cache()
+    return subset
 
 
 def main():
@@ -308,6 +540,16 @@ def main():
         cache_dir=model_args.cache_dir,
         revision=model_args.model_revision,
         use_auth_token=True if model_args.use_auth_token else None,
+    )
+    DE_config = AutoConfig.from_pretrained(
+        model_args.config_name if model_args.config_name else model_args.model_name_or_path,
+        num_labels=num_labels,
+        label2id=label_to_id,
+        id2label={i: l for l, i in label_to_id.items()},
+        finetuning_task=data_args.task_name,
+        cache_dir=model_args.cache_dir,
+        revision=model_args.model_revision,
+        output_hidden_states=True,
     )
     tokenizer = AutoTokenizer.from_pretrained(
         model_args.tokenizer_name if model_args.tokenizer_name else model_args.model_name_or_path,

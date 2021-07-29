@@ -23,7 +23,7 @@ import os
 # notice 制定GPU
 import time
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 import sys
 from dataclasses import dataclass, field
 from typing import Optional

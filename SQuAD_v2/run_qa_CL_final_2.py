@@ -21,10 +21,9 @@ Fine-tuning the library models for question answering.
 
 import os
 # notice 制定GPU
-from datasets.arrow_dataset import update_metadata_with_features
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "2"
-
+from datasets.arrow_dataset import update_metadata_with_features
 import pyarrow as pa
 import torch
 from geomloss import SamplesLoss
@@ -339,7 +338,6 @@ def change_dataset(temp_dataset, add_column="idx"):
     # print("hee")
     return add_dataset
 
-
 def DE(trainer,train_dataset,training_args,data_args):
     logger.info("***难度评估开始***")
     total_train_dataloader = trainer.get_train_dataloader()
@@ -437,10 +435,11 @@ def DE(trainer,train_dataset,training_args,data_args):
     threshold = ((total_len) * data_args.div_subset) // training_args.per_device_train_batch_size
     for i in range(data_args.div_subset):
         #数据蒸馏部分
-        if len(subset[i]) > threshold:
-            sample_num = ((len(subset[i])) // data_args.div_subset)
-        else:
-            sample_num = (len(subset[i]))
+        # if len(subset[i]) > threshold:
+        #     sample_num = ((len(subset[i])) // data_args.div_subset)
+        # else:
+        #     sample_num = (len(subset[i]))
+        sample_num = ((len(subset[i])) // data_args.div_subset)
         #课程安排
         dd += random.sample(subset[i],sample_num)
         subset[i] = train_dataset.select(dd)
@@ -551,6 +550,7 @@ def main():
         use_auth_token=True if model_args.use_auth_token else None,
         output_hidden_states=True,
     )
+
     tokenizer = AutoTokenizer.from_pretrained(
         model_args.tokenizer_name if model_args.tokenizer_name else model_args.model_name_or_path,
         cache_dir=model_args.cache_dir,
@@ -823,7 +823,7 @@ def main():
         compute_metrics=compute_metrics,
     )
 
-    trainer_curr = []
+    # trainer_curr = []
 
     # Training
     if training_args.do_train:
@@ -873,6 +873,7 @@ def main():
 
         training_args_curr = copy.deepcopy(training_args)
         training_args_curr.num_train_epochs = 1
+        training_args_curr.learning_rate = 3e-6
         # for i in range(data_args.div_subset):
         #     trainer_curr.append(
         #         QuestionAnsweringTrainer(
@@ -890,7 +891,7 @@ def main():
 
         logger.info("curr num_train_epochs --- " + str(training_args_curr.num_train_epochs))
         for i in range(data_args.div_subset):
-            logger.info("******* 开始课程训练 *******")
+            logger.info("******* 开始 {cnt} 课程训练 *******".format(cnt = i))
             curr_model = AutoModelForQuestionAnswering.from_pretrained(
                 checkpoint,
                 from_tf=bool(".ckpt" in model_args.model_name_or_path),
@@ -899,8 +900,10 @@ def main():
                 revision=model_args.model_revision,
                 use_auth_token=True if model_args.use_auth_token else None,
             )
-            trainer_curr.append(
-                QuestionAnsweringTrainer(
+            # trainer_curr.append(
+            #
+            # )
+            trainer_curr = QuestionAnsweringTrainer(
                     model=curr_model,
                     args=training_args_curr,
                     train_dataset=curr_subset[i] if training_args.do_train else None,
@@ -911,11 +914,11 @@ def main():
                     post_process_function=post_processing_function,
                     compute_metrics=compute_metrics,
                 )
-            )
-            train_result = trainer_curr[i].train(resume_from_checkpoint=checkpoint)
+            train_result = trainer_curr.train(resume_from_checkpoint=checkpoint)
             checkpoint = training_args.output_dir
-            trainer_curr[i].save_model()
+            trainer_curr.save_model()
             logger.info("curr   save model at " + training_args.output_dir)
+            torch.cuda.empty_cache()
 
         metrics = train_result.metrics
         max_train_samples = (
@@ -926,9 +929,9 @@ def main():
         # trainer.log_metrics("train", metrics)
         # trainer.save_metrics("train", metrics)
         # trainer.save_state()
-        trainer_curr[data_args.div_subset - 1].log_metrics("train", metrics)
-        trainer_curr[data_args.div_subset - 1].save_metrics("train", metrics)
-        trainer_curr[data_args.div_subset - 1].save_state()
+        trainer_curr.log_metrics("train", metrics)
+        trainer_curr.save_metrics("train", metrics)
+        trainer_curr.save_state()
         torch.cuda.empty_cache()
 
     # Evaluation
@@ -945,13 +948,13 @@ def main():
 
         logger.info("*** Evaluate ***")
         # metrics = trainer.evaluate()
-        metrics = trainer_curr[data_args.div_subset - 1].evaluate()
+        metrics = trainer_curr.evaluate()
 
         max_eval_samples = data_args.max_eval_samples if data_args.max_eval_samples is not None else len(eval_dataset)
         metrics["eval_samples"] = min(max_eval_samples, len(eval_dataset))
 
-        trainer_curr[data_args.div_subset - 1].log_metrics("eval", metrics)
-        trainer_curr[data_args.div_subset - 1].save_metrics("eval", metrics)
+        trainer_curr.log_metrics("eval", metrics)
+        trainer_curr.save_metrics("eval", metrics)
 
     # Prediction
     if training_args.do_predict:

@@ -263,7 +263,28 @@ def DE_random(data_args,training_args, train_dataset):
     logger.info("***随机划分完成***")
     return result
 
-def cal_diff(x, y, norm="org", criterion ="wd" ):
+def qt_cal(x,y):
+    input_outer_product = torch.outer(x, x)
+    output_outer_product = torch.outer(y,y)
+    (input_evals, input_evecs) = torch.eig(input_outer_product, eigenvectors=True)
+    (output_evals, output_evecs) = torch.eig(output_outer_product, eigenvectors=True)
+
+def qt_cal_density_matrix(x):
+    # https://stackoverflow.com/questions/66894586/eig-cpu-not-implemented-for-long-in-torch-eigx
+    outer_product = torch.outer(x, x)
+    (evals, evecs) = torch.eig(outer_product, eigenvectors=True)
+    density_matrix = torch.zeros(len(x),len(x),dtype=torch.float)
+    for i,eigval in enumerate(evals):
+        eigval = eigval[0]
+        density_matrix += (eigval * torch.outer(evecs[:,i],evecs[:,i]))
+    return density_matrix
+
+
+
+
+
+def cal_diff(x, y, norm="org", criterion ="qt" ):
+    # 对原来的向量进行放缩
     if norm == "softmax":
         x = F.softmax(x)
         y = F.softmax(y)
@@ -299,6 +320,8 @@ def cal_diff(x, y, norm="org", criterion ="wd" ):
             # notice 考虑了KL的不对称性
             KLloss = (criterion_kl(x[i], y[i])+criterion_kl(y[i], x[i]))/2
             result += KLloss.item()
+        elif criterion == "qt":
+            result += qt_cal(x[i],y[i])
         else:
             # change wgan
             F_i, G_j = OT_solver(x[i], y[i])
@@ -340,7 +363,7 @@ def change_dataset(temp_dataset, add_column="idx"):
     return add_dataset
 
 
-def DE(trainer,train_dataset,training_args,data_args):
+def DE_quantum(trainer, train_dataset, training_args, data_args):
     logger.info("***难度评估开始***")
     total_train_dataloader = trainer.get_train_dataloader()
     for i,item in enumerate(total_train_dataloader):
@@ -356,7 +379,7 @@ def DE(trainer,train_dataset,training_args,data_args):
     difficult_result = []
     # notice 划分方法
     method = "org"
-    criterion = "wd"
+    criterion = "qt"
     logger.info("划分方法 " + method + "   " + criterion)
     cnt=0
     for inputs in tqdm(total_train_dataloader):
@@ -396,7 +419,9 @@ def DE(trainer,train_dataset,training_args,data_args):
         # print("output[1].shape: ",output[1].shape )
         # print("output[1][2].shape: ", output[1][2].shape)
         # print("output[1][2][-1].shape: ", output[8][0].shape)
-        difficult_result.append(cal_diff(output[1].hidden_states[0],output[1].hidden_states[-1],norm = method,criterion=criterion))
+        difficult_result.append(
+            cal_diff(output[1].hidden_states[0],output[1].hidden_states[-1],norm = method,criterion=criterion)
+        )
         # cnt +=1
         # if cnt>1:
         #     sys.exit(100)
@@ -451,6 +476,7 @@ def DE(trainer,train_dataset,training_args,data_args):
     # notice 释放缓存
     torch.cuda.empty_cache()
     return subset
+
 
 def main():
     # See all possible arguments in src/transformers/training_args.py

@@ -23,7 +23,7 @@ import os
 # notice 制定GPU
 from datasets.arrow_dataset import update_metadata_with_features
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
 import pyarrow as pa
 import torch

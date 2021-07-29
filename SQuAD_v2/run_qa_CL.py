@@ -22,7 +22,7 @@ import os
 # notice 制定GPU
 from datasets.arrow_dataset import update_metadata_with_features
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
 import pyarrow as pa
 import torch
@@ -433,17 +433,22 @@ def DE(trainer,train_dataset,training_args,data_args):
     # notice 进行采样
     # 模拟退火
     dd = []
+    dd_whole = []
     for i in range(data_args.div_subset):
         sample_num = (len(subset[i])) // data_args.div_subset
         dd += random.sample(subset[i],sample_num)
+        dd_whole += subset[i]
         subset[i] = train_dataset.select(dd)
         print(len(subset[i]))
+
+    # 构建一个按照顺序排序的集合
+    train_dataset_ordered = train_dataset.select(dd_whole)
 
     logger.info("***难度评估结束***")
 
     # notice 释放缓存
     torch.cuda.empty_cache()
-    return subset
+    return subset, train_dataset_ordered
 
 def main():
     # See all possible arguments in src/transformers/training_args.py
@@ -838,7 +843,8 @@ def main():
         compute_metrics=compute_metrics,
     )
 
-    curr_subset = DE(trainer_DE, train_dataset, training_args, data_args)
+    curr_subset, train_dataset_ordered = DE(trainer_DE, train_dataset, training_args, data_args)
+    curr_subset.insert(0,train_dataset_ordered)
 
     training_args_curr = copy.deepcopy(training_args)
     training_args_curr.num_train_epochs = 1
